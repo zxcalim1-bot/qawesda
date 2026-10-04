@@ -309,6 +309,9 @@ COMPRESS	uz	siqish
 MOST_FREQUENT	ru	чаще всего; самый част; самая част; самое част; наиболее част
 MOST_FREQUENT	en	most frequent; most common; occurs most
 MOST_FREQUENT	uz	eng ko'p uchraydigan; ko'p uchraydigan; eng ko'p takrorlangan
+FREQUENCY	ru	частот
+FREQUENCY	en	frequency; frequencies
+FREQUENCY	uz	chastota; uchrashlar soni
 OCCURRENCE	ru	вхожден; встреча; =раз
 OCCURRENCE	en	occurrence; occur; appears; =times
 OCCURRENCE	uz	uchray; marta
@@ -375,10 +378,10 @@ PRODUCT	uz	ko'paytma; ko'paytir
 COUNT	ru	количеств; скольк; ~посчит; ~подсчит; =кол-во
 COUNT	en	count; how many; number of
 COUNT	uz	nechta; =soni; =sonini; miqdor
-MAX	ru	максим; наибольш; самый больш; самое больш; самая больш; самого больш
+MAX	ru	максим; наибольш; самый больш; самое больш; самая больш; самого больш; =большее
 MAX	en	max; maximum; largest; biggest; greatest; highest
 MAX	uz	eng katta; maksimal; eng kattasi
-MIN	ru	миним; наименьш; самый маленьк; самое маленьк; самая маленьк; самый меньш
+MIN	ru	миним; наименьш; самый маленьк; самое маленьк; самая маленьк; самый меньш; =меньшее
 MIN	en	min; minimum; smallest; least; lowest
 MIN	uz	eng kichik; minimal; eng kichigi
 AVERAGE	ru	средн; среднее арифметическ
@@ -402,6 +405,9 @@ SECOND	uz	ikkinchi
 KTH	ru	k-; k-й; k-ый; =k-тый
 KTH	en	kth; k-th
 KTH	uz	k-chi
+BY_VALUE	ru	по величин; по значени
+BY_VALUE	en	by value; by size; by magnitude
+BY_VALUE	uz	kattaligi bo'yicha; qiymati bo'yicha
 EVEN	ru	четн
 EVEN	en	even
 EVEN	uz	juft
@@ -453,7 +459,7 @@ FIVE_DIGIT	uz	besh xonali
 SIX_DIGIT	ru	шестизначн
 SIX_DIGIT	en	six-digit; six digit
 SIX_DIGIT	uz	olti xonali
-TWO	ru	=два; =две; =двух; =двум; =двумя
+TWO	ru	=два; =две; =двух; =двум; =двумя; двойк
 TWO	en	=two; =both
 TWO	uz	=ikki; =ikkita; =ikkala
 THREE	ru	=три; =трех; =трем; =тремя
@@ -461,10 +467,10 @@ THREE	en	=three
 THREE	uz	=uch; =uchta
 GCD	ru	=нод; наибольш общ делител; наибольший общий делитель
 GCD	en	=gcd; greatest common divisor; highest common factor; =hcf
-GCD	uz	=ekub; eng katta umumiy bo'luvchi
+GCD	uz	ekub; eng katta umumiy bo'luvchi
 LCM	ru	=нок; наименьш общ кратн; наименьшее общее кратное
 LCM	en	=lcm; least common multiple; lowest common multiple
-LCM	uz	=ekuk; eng kichik umumiy karrali
+LCM	uz	ekuk; eng kichik umumiy karrali
 FACTORIAL	ru	факториал
 FACTORIAL	en	factorial
 FACTORIAL	uz	faktorial
@@ -615,7 +621,7 @@ LESS_EQ	uz	kichik yoki teng
 # ---------------------------------------------------------------- stop words
 # Frequent instruction words. They are matched (and ignored) so that the typo-tolerant
 # pass never mistakes them for a concept ("найдите" is not "найдётся").
-_STOP	ru	найд; найт; наход; вычисл; дан; =дано; =даны; =дана; требу; нужн; необходим; напиш; программ; порядк; =задача; =задачи; =его; =ее; =их; =который; котор; =этого; =этой; =если; =иначе; =затем; =после; =через; =каждое; =пример; =примеры; =ответ; =ввод; =вводится; =вводятся; =входные; =выходные; =данные; =формат; =будет; =является; =надо; =можно; =нельзя; =также; =только; =одно; =одна; =один; =пусть; =известно; =вывести; =выведите; =выводит
+_STOP	ru	найд; найт; наход; вычисл; дан; =дано; =даны; =дана; требу; нужн; необходим; напиш; программ; порядк; =задача; =задачи; =его; =ее; =их; =который; котор; =этого; =этой; =если; =иначе; =затем; =после; =через; =пример; =примеры; =ответ; =ввод; =вводится; =вводятся; =входные; =выходные; =данные; =формат; =будет; =является; =надо; =можно; =нельзя; =также; =только; =одно; =одна; =один; =пусть; =известно; =вывести; =выведите; =выводит
 _STOP	en	=find; =given; =compute; =calculate; =determine; =write; =program; =required; =need; =the; =then; =which; =that; =print; =your; =task; =example; =examples; =input; =output; =following; =contains; =there; =should
 _STOP	uz	=toping; =topilsin; =berilgan; =berilgan; =hisoblang; =yozing; =dastur; =dasturini; =tuzing; =uning; =ularning; =misol; =kiritiladi; =chiqarilsin; =chiqaring; =kiriting; =bo'lgan; =qilib
 # ---------------------------------------------------------------- more objects

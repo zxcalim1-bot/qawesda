@@ -784,7 +784,7 @@ print("".join(m.group(1) + str(len(m.group(0))) for m in re.finditer(r"(.)\1*", 
 # skill: count_substring
 title: Количество вхождений подстроки
 topics: Строки; Поиск подстроки
-match: (OCCURRENCE | COUNT) & SUBSTRING | (OCCURRENCE & (STRING | WORD) & COUNT & !CHAR & !LETTER & !VOWEL)
+match: (OCCURRENCE | COUNT) & SUBSTRING | (OCCURRENCE & (STRING | WORD) & COUNT & !CHAR & !LETTER & !VOWEL & !EACH & !FREQUENCY)
 priority: 1.8
 input: str | str
 input_desc: Первая строка — текст s, вторая — подстрока t.
@@ -1658,4 +1658,163 @@ when: Когда длина итератора заранее неизвестн
 readability: 4
 ```python
 print(sum(1 for _ in input()))
+```
+
+# skill: char_frequency
+title: Сколько раз встречается каждый символ
+topics: Строки; Словари; Подсчёт
+match: (EACH | FREQUENCY) & (CHAR | LETTER) & (COUNT | OCCURRENCE | FREQUENCY) & !WORD & !MOST_FREQUENT & !LIST
+boost: STRING
+priority: 2.4
+param: COND = ch.isalpha() if LETTER else not(ch.isspace())
+param: WHAT = букв if LETTER else символов
+input: str
+input_desc: Одна строка.
+output_desc: Для каждого из {WHAT} в порядке первого появления — строка «символ количество». Пробелы не учитываются.
+understood: Дана строка. Посчитать частоты всех {WHAT}: сколько раз встречается каждый из них (в порядке первого появления).
+algorithm: Подсчёт частот словарём
+why: Словарь «символ → количество» строится за один проход; словари Python хранят ключи в порядке вставки, поэтому порядок вывода совпадает с порядком первого появления.
+ideas: dict.get(ch, 0) + 1; collections.Counter; s.count(ch) для каждого различного символа
+structures: dict
+links: lib:collections.Counter, py:method:dict.get, py:method:str.count, py:method:dict.fromkeys
+edge: Регистр различается: 'A' и 'a' считаются отдельно.
+edge: Пробелы не считаются.
+edge: Пустая строка — ничего не выводится.
+sample: hello world => h 1\ne 1\nl 3\no 2\nw 1\nr 1\nd 1
+sample: abca => a 2\nb 1\nc 1
+sample: Aa a => A 1\na 2
+
+## Словарь вручную
+approach: dict
+role: beginner
+time: O(n)
+memory: O(k), k — число различных символов
+idea: Проходим по строке и увеличиваем счётчик символа в словаре.
+principle: count.get(ch, 0) возвращает текущее количество (0, если символа ещё не было); после прохода печатаем пары в порядке вставки.
+pros: Видно, как устроен подсчёт; Один проход
+cons: Больше строк, чем с Counter
+when: Для обучения и когда нужна своя логика подсчёта.
+readability: 5
+```python
+s = input()
+count = {}
+for ch in s:
+    if {COND}:
+        count[ch] = count.get(ch, 0) + 1
+for ch, c in count.items():
+    print(ch, c)
+```
+
+## collections.Counter
+approach: counter
+role: short
+time: O(n)
+memory: O(k)
+idea: Counter сам строит словарь «символ → количество» по генератору подходящих символов.
+principle: Counter — подкласс dict, ключи хранятся в порядке первого появления; items() отдаёт пары (символ, количество).
+pros: Коротко; Counter умеет most_common, сложение и вычитание счётчиков
+cons: Нужен импорт
+when: На олимпиаде и в реальном коде — по умолчанию.
+readability: 5
+```python
+from collections import Counter
+
+s = input()
+count = Counter(ch for ch in s if {COND})
+for ch, c in count.items():
+    print(ch, c)
+```
+
+## str.count для каждого различного символа
+approach: str-count
+role: alternative
+time: O(n·k)
+memory: O(k)
+idea: dict.fromkeys(s) даёт различные символы в порядке появления, s.count(ch) считает каждый отдельным проходом.
+principle: Для каждого из k различных символов строка просматривается заново, поэтому время O(n·k); для коротких строк это незаметно.
+pros: Без словаря-счётчика; Очень читаемо
+cons: Медленнее при большом числе различных символов
+when: Для коротких строк и небольших алфавитов.
+readability: 5
+```python
+s = input()
+for ch in dict.fromkeys(s):
+    if {COND}:
+        print(ch, s.count(ch))
+```
+
+# skill: word_frequency
+title: Сколько раз встречается каждое слово
+topics: Строки; Словари; Подсчёт
+match: (EACH | FREQUENCY) & WORD & (COUNT | OCCURRENCE | FREQUENCY) & !MOST_FREQUENT & !LETTER & !CHAR & !LONGEST
+boost: STRING
+priority: 2.4
+input: str
+input_desc: Одна строка: слова через пробел.
+output_desc: Для каждого слова в порядке первого появления — строка «слово количество».
+understood: Дан текст. Посчитать, сколько раз встречается каждое слово (в порядке первого появления).
+algorithm: Подсчёт частот слов
+why: split() делит текст на слова, словарь «слово → количество» заполняется за один проход.
+ideas: split(); dict.get; collections.Counter; words.count
+structures: list[str], dict
+links: lib:collections.Counter, py:method:str.split, py:method:dict.get, py:method:list.count
+edge: Регистр учитывается: «Кот» и «кот» — разные слова (добавьте lower(), если нужно иначе).
+edge: Знаки препинания остаются частью слова.
+sample: the cat and the dog => the 2\ncat 1\nand 1\ndog 1
+sample: a a a => a 3
+sample: мама мыла раму мама => мама 2\nмыла 1\nраму 1
+
+## Словарь вручную
+approach: dict
+role: beginner
+time: O(n)
+memory: O(k), k — число различных слов
+idea: Перебираем слова и увеличиваем их счётчики в словаре.
+principle: count.get(w, 0) + 1 обновляет количество; словарь помнит порядок вставки.
+pros: Понятно новичку
+cons: Длиннее Counter
+when: Для обучения.
+readability: 5
+```python
+words = input().split()
+count = {}
+for w in words:
+    count[w] = count.get(w, 0) + 1
+for w, c in count.items():
+    print(w, c)
+```
+
+## collections.Counter
+approach: counter
+role: short
+time: O(n)
+memory: O(k)
+idea: Counter(words) — готовый словарь частот.
+principle: Ключи Counter идут в порядке первого появления слов.
+pros: Две строки логики
+cons: Нужен импорт
+when: Обычно.
+readability: 5
+```python
+from collections import Counter
+
+for w, c in Counter(input().split()).items():
+    print(w, c)
+```
+
+## list.count для каждого различного слова
+approach: list-count
+role: alternative
+time: O(n·k)
+memory: O(n)
+idea: Различные слова в порядке появления даёт dict.fromkeys, количество — words.count(w).
+principle: Каждый вызов count проходит весь список, отсюда O(n·k).
+pros: Очень читаемо
+cons: Медленно для больших текстов
+when: Для коротких текстов.
+readability: 5
+```python
+words = input().split()
+for w in dict.fromkeys(words):
+    print(w, words.count(w))
 ```

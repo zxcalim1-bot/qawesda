@@ -124,6 +124,8 @@ def main(argv):
     for line in open(os.path.join(ASSETS, "lexicon.tsv"), encoding="utf-8"):
         if line.strip() and not line.startswith("#"):
             lexicon.add(line.split("\t")[0])
+    # Concepts produced by QueryParser itself rather than by lexicon words.
+    lexicon |= {"RANGE", "UPTO", "N_ITEMS"}
     skills = parse(text)
     only = set(argv)
     ids = set()

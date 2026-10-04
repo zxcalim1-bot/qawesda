@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.navigation.NavHostController
+import com.pyolympiad.data.Domain
 import com.pyolympiad.data.EntrySummary
 import com.pyolympiad.data.SearchHit
 import com.pyolympiad.engine.solver.Method
@@ -20,6 +21,7 @@ import com.pyolympiad.watch.ui.kit.codeItem
 import com.pyolympiad.watch.ui.kit.header
 import com.pyolympiad.watch.ui.kit.infoCard
 import com.pyolympiad.watch.ui.kit.kindTitle
+import com.pyolympiad.watch.ui.kit.levelTitle
 import com.pyolympiad.watch.ui.kit.navButton
 import com.pyolympiad.watch.ui.kit.rememberTextInput
 import com.pyolympiad.watch.ui.kit.textItem
@@ -85,6 +87,12 @@ fun SolveResultScreen(vm: AppViewModel, nav: NavHostController) {
             runCatching { vm.repo.search(result.searchHint, limit = 8) }.getOrDefault(emptyList())
         } else emptyList()
     }
+    // Tasks of the local bank that look like this statement: their solutions are verified on tests.
+    val bankTasks by produceState<List<SearchHit>>(emptyList(), state.input) {
+        value = withContext(Dispatchers.IO) {
+            runCatching { vm.repo.search(state.input, listOf(Domain.TASKS), limit = 3) }.getOrDefault(emptyList())
+        }
+    }
 
     ScreenList { item ->
         if (sol == null) {
@@ -97,9 +105,15 @@ fun SolveResultScreen(vm: AppViewModel, nav: NavHostController) {
                 header(item, "Возможно, вы имели в виду")
                 for (a in result.alternatives) navButton(item, a.title, key = a.skillId) { vm.solveWith(a.skillId) }
             }
+            if (bankTasks.isNotEmpty()) {
+                header(item, "Похожие задачи с готовыми решениями")
+                for (h in bankTasks) navButton(item, h.entry.title, levelTitle(h.entry.level) + " · " + h.entry.category, Tone.SECONDARY, key = "bt" + h.entry.id) { nav.navigate(R.entry(h.entry.id)) }
+            }
             if (similar.isNotEmpty()) {
                 header(item, "Похожее в базе знаний")
-                for (h in similar) navButton(item, h.entry.title, kindTitle(h.entry.kind), Tone.OUTLINED, key = h.entry.id) { nav.navigate(R.entry(h.entry.id)) }
+                for (h in similar.filter { s -> bankTasks.none { it.entry.id == s.entry.id } }) {
+                    navButton(item, h.entry.title, kindTitle(h.entry.kind), Tone.OUTLINED, key = h.entry.id) { nav.navigate(R.entry(h.entry.id)) }
+                }
             }
             return@ScreenList
         }
@@ -161,6 +175,10 @@ fun SolveResultScreen(vm: AppViewModel, nav: NavHostController) {
         navButton(item, "Запустить код", "Python Run", Tone.TERTIARY) {
             vm.openCode(main.code, sol.title, stdin = sol.concreteInput ?: sol.samples.firstOrNull()?.input ?: "")
             nav.navigate(R.CODE)
+        }
+        if (bankTasks.isNotEmpty()) {
+            header(item, "Похожие задачи в базе")
+            for (h in bankTasks) navButton(item, h.entry.title, levelTitle(h.entry.level) + " · " + h.entry.category, Tone.OUTLINED, key = "bt" + h.entry.id) { nav.navigate(R.entry(h.entry.id)) }
         }
         if (related.isNotEmpty()) {
             header(item, "Связанные знания")

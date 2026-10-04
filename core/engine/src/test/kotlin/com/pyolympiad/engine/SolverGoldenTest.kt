@@ -67,6 +67,22 @@ class SolverGoldenTest {
             "Найдите наибольшую общую подпоследовательность двух строк" to "lcs",
             "Ханойская башня" to "hanoi",
             "Выведите все перестановки чисел от 1 до n" to "permutations_print",
+            "Дано число n. Выведите все числа от 1 до n." to "seq:range:select",
+            "Сумма первых n натуральных чисел" to "seq:range:sum",
+            "Выведите первые n чисел" to "seq:range:select",
+            "Найдите количество простых чисел до n" to "seq:range:count",
+            "Дано n чисел. Найдите их сумму" to "seq:list:sum",
+            "Найдите второй по величине элемент массива" to "second_max",
+            "Найдите минимальное количество монет для суммы s" to "coin_min",
+            "Посчитайте сколько раз каждая буква встречается в строке" to "char_frequency",
+            "Посчитайте, сколько раз встречается каждое слово в тексте" to "word_frequency",
+            "Сколько раз встречается каждое число в массиве" to "element_frequency",
+            "Удалите дубликаты из списка" to "dedupe_list",
+            "Выведите числа Фибоначчи до n" to "fibonacci_upto",
+            "Проверьте, является ли число степенью двойки" to "power_of_two",
+            "Выведите первые n простых чисел" to "first_n_primes",
+            "Найдите первое простое число, большее n" to "next_prime",
+            "Даны два числа. Найдите большее из них" to "max_of_two_three",
             // translit
             "naiti summu chetnyh cifr chisla" to "seq:digits:sum",
             "proverit yavlyaetsya li chislo prostym" to "is_prime",
@@ -82,12 +98,20 @@ class SolverGoldenTest {
             "Find the factorial of n" to "factorial",
             "binary search in a sorted array" to "binary_search",
             "Find the longest word in a sentence" to "seq:words:max",
+            "count primes up to n" to "seq:range:count",
+            "Fibonacci numbers up to n" to "fibonacci_upto",
+            "remove duplicates from the list" to "dedupe_list",
+            "count the frequency of each element in the list" to "element_frequency",
             // uzbek
             "massivdagi 5 dan katta sonlar sonini toping" to "seq:list:count",
             "ikki sonning EKUB ini toping" to "gcd",
             "sonning faktorialini hisoblang" to "factorial",
             "n sonining juft raqamlari yig'indisini toping" to "seq:digits:sum",
             "satrdagi unli harflar sonini toping" to "seq:chars:count",
+            "ikkita sonning EKUBini toping" to "gcd",
+            "ikkita sonning EKUKini toping" to "lcm",
+            "1 dan n gacha barcha sonlarni chiqaring" to "seq:range:select",
+            "n ta son berilgan, ularning yig'indisini toping" to "seq:list:sum",
             // typos
             "Найдите сумму цифр чсла" to "seq:digits:sum",
             "Найдите сумму диогоналей матрицы" to "matrix_diagonal_sum",
@@ -143,6 +167,20 @@ class SolverGoldenTest {
         val r = engine.solver.solve("абырвалг qwerty")
         assertTrue(r.solution == null)
         assertEquals(com.pyolympiad.engine.solver.Solver.FAILURE, r.failure)
+    }
+
+    @Test
+    fun unknownTermsAndOpenSequencesFailHonestly() {
+        // An unknown word must not be dropped: "числа-близнецы" is not "все числа".
+        for (text in listOf(
+            "Найдите числа-близнецы от 1 до n",
+            "Найдите числа близнецы от 1 до n",
+            "Найдите сумму первых n простых чисел",
+            "Кошка ловит мышь в комнате",
+        )) {
+            val r = engine.solver.solve(text)
+            assertTrue("«$text» → ${r.solution?.skillId}", r.solution == null)
+        }
     }
 
     @Test

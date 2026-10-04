@@ -38,6 +38,8 @@ class ParsedQuery(
     val inputNumbers: List<Token>,
     val variables: List<String>,
     val quoted: List<String>,
+    /** Words (3+ letters) that matched no concept, stop word, variable or range: what the solver did not understand. */
+    val uncovered: List<String> = emptyList(),
 ) {
     private val conceptSet: Set<String> = hits.mapTo(HashSet()) { it.concept }
     private val strongSet: Set<String> = hits.filter { !it.weak }.mapTo(HashSet()) { it.concept }
@@ -75,6 +77,12 @@ class QueryParser(private val lexicon: Lexicon) {
         "be", "is", "равно", "ravno", "или", "ili", "or", "equal", "равен", "ravna", "ravno",
     )
 
+    /** Concepts naming a kind of number: "простых [чисел] до n" is a range, "строки до 100" is not. */
+    private val NUMBER_KINDS = setOf(
+        "NUMBER", "NATURAL", "PRIME", "COMPOSITE", "EVEN", "ODD", "SQUARE", "CUBE", "PERFECT_SQUARE",
+        "FIBONACCI", "PERFECT", "ARMSTRONG", "PALINDROME", "TWO_DIGIT", "THREE_DIGIT", "POSITIVE",
+    )
+
     private val SINGLE_LETTER_VARS = setOf("n", "m", "k", "a", "b", "c", "x", "y", "s", "t", "p", "q", "d", "l", "r")
 
     fun parse(text: String): ParsedQuery {
@@ -109,6 +117,12 @@ class QueryParser(private val lexicon: Lexicon) {
         // 2) Word constraints: "не более 10^5", "at most 1000", "10^9 dan oshmaydi".
         val hits = ArrayList<ConceptHit>()
         for (h in rawHits) {
+            // "большее n" compares with a value; "большее из них" is a maximum.
+            if ((h.concept == "MAX" || h.concept == "MIN") && h.matchedText in setOf("большее", "меньшее") &&
+                operandAt(tokens, h.end, variables) != null) {
+                hits += h.copy(concept = if (h.concept == "MAX") "GREATER" else "LESS")
+                continue
+            }
             if (h.concept == "LE_PHRASE" || h.concept == "GE_PHRASE") {
                 val numIdx = (h.end until minOf(tokens.size, h.end + 3)).firstOrNull { tokens[it].type == TokenType.NUMBER }
                     ?: (maxOf(0, h.start - 3) until h.start).lastOrNull { tokens[it].type == TokenType.NUMBER }
@@ -163,6 +177,9 @@ class QueryParser(private val lexicon: Lexicon) {
                 ranges += RangeSpec(lo, hi, i, hiIdx + 1)
             }
         }
+        var upTo = false
+        if (ranges.isEmpty()) upToRange(tokens, hits, variables, language.language)?.let { ranges += it; upTo = true }
+        if (ranges.isEmpty()) firstNRange(tokens, hits, variables)?.let { ranges += it }
 
         // 4) Parameters attached to concepts.
         val params = ArrayList<ParamBinding>()
@@ -185,12 +202,43 @@ class QueryParser(private val lexicon: Lexicon) {
 
         // Parsed ranges are concepts too ("от 1 до n" means the task is about a range of numbers).
         for (r in ranges) hits += ConceptHit("RANGE", r.start, r.end, LexLang.RU, "range", "от … до", weak = false, fuzzy = false)
+        // A range given only by its upper end ("до n") is also marked: "числа Фибоначчи до n" lists values up to n.
+        for (r in ranges) if (upTo) hits += ConceptHit("UPTO", r.start, r.end, LexLang.RU, "upto", "до", weak = false, fuzzy = false)
 
         val inputs = tokens.withIndex().filter { (i, t) ->
             t.type == TokenType.NUMBER && i !in usedNumberIdx && i !in rangeTokenIdx
         }.map { it.value }
 
         val quoted = tokens.filter { it.type == TokenType.QUOTED }.map { it.text }
+
+        val coveredIdx = HashSet<Int>(rangeTokenIdx)
+        for (h in rawHits) for (j in h.start until h.end) coveredIdx += j
+        val uncovered = ArrayList<String>()
+        for ((i, t) in tokens.withIndex()) {
+            if (t.type != TokenType.WORD || t.text in variables) continue
+            if (i !in coveredIdx) {
+                if (t.text.length >= 3) uncovered += t.text
+            } else if ('-' in t.text && rawHits.none { i >= it.start && i < it.end && '-' in it.form }) {
+                // A stem matched only the first half of "числа-близнецы": the rest is still unexplained.
+                t.text.split('-').drop(1).filterTo(uncovered) { it.length >= 3 }
+            }
+        }
+
+        // "n чисел", "n numbers", "n ta son": a list of n values is read from input.
+        for (i in 0 until tokens.size - 1) {
+            if (tokens[i].type != TokenType.WORD || tokens[i].text !in variables) continue
+            if (hits.any { it.concept == "FIRST" && it.end == i }) continue // "первых n чисел" is a sequence, not input
+            val next = when {
+                tokens[i + 1].text == "ta" -> i + 2
+                // "n до 10^5 чисел": skip the bound between the variable and the noun
+                tokens[i + 1].text in setOf("до", "do") && tokens.getOrNull(i + 2)?.type == TokenType.NUMBER -> i + 3
+                else -> i + 1
+            }
+            if (hits.any { it.start == next && it.concept in setOf("NUMBER", "ELEMENT") }) {
+                hits += ConceptHit("N_ITEMS", i, next + 1, LexLang.RU, "n items", "n чисел", weak = false, fuzzy = false)
+                break
+            }
+        }
 
         return ParsedQuery(
             original = text,
@@ -205,6 +253,7 @@ class QueryParser(private val lexicon: Lexicon) {
             inputNumbers = inputs,
             variables = variables,
             quoted = quoted,
+            uncovered = uncovered,
         )
     }
 
@@ -224,6 +273,56 @@ class QueryParser(private val lexicon: Lexicon) {
             }
         }
         return out.toList()
+    }
+
+    /**
+     * "простых чисел до n", "primes up to n", "n gacha tub sonlar": the numbers 1..n.
+     * Only when a kind of number is named right next to it, so that constraints such as
+     * "n до 10^5" or "длина строки до 100" are not mistaken for a range.
+     */
+    private fun upToRange(tokens: List<Token>, hits: List<ConceptHit>, variables: List<String>, language: Language): RangeSpec? {
+        fun numberWordAt(idx: Int): Boolean = hits.any { it.concept in NUMBER_KINDS && idx >= it.start && idx < it.end }
+        fun hiAt(idx: Int): Operand? {
+            val t = tokens.getOrNull(idx) ?: return null
+            if (t.type == TokenType.NUMBER && (t.text.contains('^') || t.text.contains('e') ||
+                    (t.number ?: return null) > BigInteger.valueOf(10_000_000))) return null
+            return operandAt(tokens, idx, variables)
+        }
+        for (i in tokens.indices) {
+            val w = tokens[i].text
+            if (tokens[i].type != TokenType.WORD) continue
+            // "up to n" is already a LESS_EQ condition.
+            if (hits.any { i >= it.start && i < it.end }) continue
+            when {
+                w == "до" || (w == "do" && language == Language.RUSSIAN_TRANSLIT) || w == "upto" ||
+                    (w == "up" && tokens.getOrNull(i + 1)?.text == "to") -> {
+                    val hiIdx = if (w == "up") i + 2 else i + 1
+                    val hi = hiAt(hiIdx) ?: continue
+                    if (!numberWordAt(i - 1)) continue
+                    return RangeSpec(Operand.Num(BigInteger.ONE), hi, i, hiIdx + 1)
+                }
+                w == "gacha" && language == Language.UZBEK -> {
+                    val hi = hiAt(i - 1) ?: continue
+                    if ((i + 1..minOf(tokens.size - 1, i + 3)).none { numberWordAt(it) }) continue
+                    return RangeSpec(Operand.Num(BigInteger.ONE), hi, i - 1, i + 1)
+                }
+            }
+        }
+        return null
+    }
+
+    /**
+     * "сумма первых n натуральных чисел" is the range 1..n. Only for plain or natural numbers and
+     * without conditions: "первых n простых/чётных/делящихся на 3" are other sequences.
+     */
+    private fun firstNRange(tokens: List<Token>, hits: List<ConceptHit>, variables: List<String>): RangeSpec? {
+        val allowed = setOf("FIRST", "NATURAL", "NUMBER", "SUM", "PRODUCT", "AVERAGE", "SQUARE", "CUBE", "PRINT")
+        if (hits.any { !it.concept.startsWith("_") && it.concept !in allowed }) return null
+        val first = hits.firstOrNull { it.concept == "FIRST" } ?: return null
+        val v = tokens.getOrNull(first.end)?.takeIf { it.type == TokenType.WORD && it.text in variables } ?: return null
+        val kind = hits.firstOrNull { it.start == first.end + 1 } ?: return null
+        if (kind.concept != "NATURAL" && kind.concept != "NUMBER") return null
+        return RangeSpec(Operand.Num(BigInteger.ONE), Operand.Var(v.text), first.start, kind.end)
     }
 
     private fun findVarBefore(tokens: List<Token>, index: Int, variables: List<String>): String? {

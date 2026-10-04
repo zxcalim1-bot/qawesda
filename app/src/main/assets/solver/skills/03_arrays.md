@@ -871,7 +871,7 @@ print(max(sum(a[i:i + k]) for i in range(n - k + 1)))
 # skill: second_max
 title: Второй по величине элемент
 topics: Списки; Поиск максимума
-match: SECOND & (MAX | MIN) & !WORD
+match: SECOND & (MAX | MIN | BY_VALUE) & !WORD
 boost: LIST, ELEMENT, NUMBER
 priority: 2.3
 param: FN = min if MIN else max
@@ -2285,4 +2285,177 @@ readability: 4
 a = input().split()
 mid = sorted(a)[len(a) // 2]
 print(mid if a.count(mid) * 2 > len(a) else "NO")
+```
+
+# skill: element_frequency
+title: Сколько раз встречается каждый элемент
+topics: Списки; Словари; Подсчёт
+match: (EACH | FREQUENCY) & (LIST | ELEMENT | NUMBER) & (COUNT | OCCURRENCE | FREQUENCY) & !MOST_FREQUENT & !CHAR & !LETTER & !WORD & !STRING & !DIGIT & !UNIQUE & !DIVISOR
+priority: 2.3
+input: list
+input_desc: Одна строка: целые числа через пробел.
+output_desc: Для каждого значения в порядке первого появления — строка «значение количество».
+understood: Дан список чисел. Посчитать, сколько раз встречается каждое значение (в порядке первого появления).
+algorithm: Подсчёт частот словарём
+why: Один проход заполняет словарь «значение → количество»; порядок ключей совпадает с порядком первого появления.
+ideas: dict.get(x, 0) + 1; collections.Counter; a.count(x) для различных значений
+structures: list, dict
+links: lib:collections.Counter, py:method:dict.get, py:method:list.count, algo:hashing
+edge: Все элементы различны — у каждого количество 1.
+edge: Отрицательные числа и ноль считаются так же, как остальные.
+sample: 1 3 2 3 1 3 => 1 2\n3 3\n2 1
+sample: 5 => 5 1
+sample: -1 0 -1 => -1 2\n0 1
+
+## Словарь вручную
+approach: dict
+role: beginner
+time: O(n)
+memory: O(k), k — число различных значений
+idea: Для каждого элемента увеличиваем его счётчик в словаре.
+principle: count.get(x, 0) + 1 — текущее количество плюс один; словарь хранит ключи в порядке вставки.
+pros: Понятно новичку; Один проход
+cons: Длиннее Counter
+when: Для обучения.
+readability: 5
+```python
+a = list(map(int, input().split()))
+count = {}
+for x in a:
+    count[x] = count.get(x, 0) + 1
+for x, c in count.items():
+    print(x, c)
+```
+
+## collections.Counter
+approach: counter
+role: short
+time: O(n)
+memory: O(k)
+idea: Counter(a) строит словарь частот одной строкой.
+principle: Counter — словарь «значение → количество» с порядком первого появления.
+pros: Коротко; Есть most_common и арифметика счётчиков
+cons: Нужен импорт
+when: Обычно.
+readability: 5
+```python
+from collections import Counter
+
+a = list(map(int, input().split()))
+for x, c in Counter(a).items():
+    print(x, c)
+```
+
+## list.count для различных значений
+approach: list-count
+role: alternative
+time: O(n·k)
+memory: O(n)
+idea: dict.fromkeys(a) даёт различные значения по порядку, a.count(x) — их количество.
+principle: Каждый a.count(x) — отдельный проход по списку.
+pros: Очень читаемо
+cons: O(n·k) — медленно, если различных значений много
+when: Для небольших списков.
+readability: 5
+```python
+a = list(map(int, input().split()))
+for x in dict.fromkeys(a):
+    print(x, a.count(x))
+```
+
+# skill: dedupe_list
+title: Удалить повторы из списка с сохранением порядка
+topics: Списки; Множества
+match: DUPLICATE & REMOVE & !STRING & !CHAR & !LETTER & !WORD
+boost: LIST, ELEMENT, NUMBER
+priority: 2.3
+input: list
+input_desc: Одна строка: целые числа через пробел.
+output_desc: Элементы без повторов (остаётся первое вхождение), через пробел.
+understood: Дан список. Удалить повторяющиеся элементы, оставив первое вхождение каждого и сохранив порядок.
+algorithm: Множество просмотренных элементов
+why: Проверка «уже встречалось?» по множеству выполняется за O(1), поэтому весь проход — O(n).
+ideas: set seen + список результата; dict.fromkeys; sorted(set(a), key=a.index)
+structures: list, set, dict
+links: py:builtin:set, py:method:dict.fromkeys, py:method:list.index, py:topic:sets
+edge: Порядок сохраняется: set(a) без дополнительных шагов порядок не гарантирует.
+edge: Все элементы равны — остаётся один.
+sample: 1 2 2 3 1 => 1 2 3
+sample: 5 5 5 => 5
+sample: 3 -1 3 0 -1 => 3 -1 0
+sample: 7 => 7
+
+## Множество seen
+approach: seen-set
+role: efficient
+time: O(n)
+memory: O(n)
+idea: Идём по списку и добавляем элемент в ответ, только если его ещё нет в множестве seen.
+principle: Проверка x in seen для множества — O(1) в среднем (хеш-таблица), поэтому весь проход линейный.
+pros: O(n); Легко добавить своё условие уникальности (например, по ключу)
+cons: Несколько строк
+when: Для больших списков и когда важен понятный алгоритм.
+readability: 5
+```python
+a = list(map(int, input().split()))
+seen = set()
+result = []
+for x in a:
+    if x not in seen:
+        seen.add(x)
+        result.append(x)
+print(*result)
+```
+
+## dict.fromkeys
+approach: fromkeys
+role: short
+time: O(n)
+memory: O(n)
+idea: Ключи словаря уникальны и хранятся в порядке вставки (Python 3.7+).
+principle: dict.fromkeys(a) оставляет первое вхождение каждого значения; распаковка печатает ключи.
+pros: Одна строка; O(n)
+cons: Неочевидно для новичка
+when: По умолчанию в коротких решениях.
+readability: 4
+python: 3.7
+```python
+a = list(map(int, input().split()))
+print(*dict.fromkeys(a))
+```
+
+## Проверка «нет ли уже в ответе»
+approach: not-in-list
+role: beginner
+time: O(n²)
+memory: O(n)
+idea: Добавляем элемент, если его ещё нет в списке результата.
+principle: x not in result просматривает список result целиком, поэтому в худшем случае O(n²).
+pros: Без множеств и словарей; Работает и для нехешируемых элементов (списков)
+cons: Квадратичное время
+when: Для небольших списков и элементов, которые нельзя положить в set.
+readability: 5
+```python
+a = list(map(int, input().split()))
+result = []
+for x in a:
+    if x not in result:
+        result.append(x)
+print(*result)
+```
+
+## sorted(set(a), key=a.index)
+approach: set-index
+role: alternative
+time: O(n·k)
+memory: O(n)
+idea: set убирает повторы, а сортировка по индексу первого вхождения возвращает исходный порядок.
+principle: a.index(x) — позиция первого вхождения x; сортировка по ней восстанавливает порядок. Каждый index — проход по списку.
+pros: Одна строка; Показывает приём «сортировка по ключу»
+cons: O(n·k) из-за a.index
+when: Для небольших списков.
+readability: 3
+```python
+a = list(map(int, input().split()))
+print(*sorted(set(a), key=a.index))
 ```

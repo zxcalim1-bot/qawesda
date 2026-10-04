@@ -155,7 +155,7 @@ object ConceptNames {
         "COMPONENTS" to "компоненты связности", "CYCLE" to "цикл в графе", "TOPOLOGICAL" to "топологическая сортировка",
         "MST" to "остовное дерево", "BITS" to "биты", "FACTORIZE" to "разложение на множители", "SIEVE" to "решето",
         "TWO" to "два значения", "THREE" to "три значения", "POSITION" to "позиция/индекс", "FIRST" to "первый",
-        "LAST" to "последний", "SECOND" to "второй", "EXISTS" to "существование", "ALL" to "все",
+        "LAST" to "последний", "SECOND" to "второй", "BY_VALUE" to "по величине", "FREQUENCY" to "частота", "UPTO" to "до n", "N_ITEMS" to "n чисел на входе", "EXISTS" to "существование", "ALL" to "все",
         "CHECK" to "проверка", "PRINT" to "вывод", "AGE" to "возраст", "SECONDS" to "время", "WEEKDAY" to "день недели",
         "MULT_TABLE" to "таблица умножения", "STARS" to "узор из символов", "HELLO" to "приветствие",
         "QUERY" to "запросы", "WINDOW" to "окно", "PREFIX" to "префикс", "COMMON" to "общий", "INCREASING" to "возрастающая",

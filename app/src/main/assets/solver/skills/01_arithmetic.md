@@ -68,7 +68,7 @@ sys.stdout.write("Hello, World!\n")
 # skill: two_numbers_sum
 title: Сумма двух чисел
 topics: Ввод и вывод; Арифметика
-match: SUM & (TWO | NUMBER) & !DIGIT & !LIST & !RANGE & !MATRIX & !STRING
+match: SUM & (TWO | NUMBER) & !DIGIT & !LIST & !RANGE & !MATRIX & !STRING & !N_ITEMS & !FIRST
 boost: TWO
 avoid: DIVISOR, ELEMENT, PRIME, EVEN, ODD, DIVISIBLE, GREATER, LESS, SQUARE, CUBE
 priority: 0.6
@@ -157,7 +157,7 @@ print(operator.add(*map(int, input().split())))
 # skill: two_numbers_ops
 title: Арифметика двух чисел
 topics: Арифметика; Операторы
-match: (DIFF | PRODUCT | QUOTIENT | MOD | POWER) & (TWO | NUMBER) & !DIGIT & !LIST & !RANGE & !MATRIX & !FACTORIAL & !STRING & !DIVISOR
+match: (DIFF | PRODUCT | QUOTIENT | MOD | POWER) & (TWO | NUMBER) & !DIGIT & !LIST & !RANGE & !MATRIX & !FACTORIAL & !STRING & !DIVISOR & !N_ITEMS
 boost: TWO
 avoid: ELEMENT, PRIME, EVEN, ODD, BINARY, BASE
 priority: 0.6
@@ -236,7 +236,7 @@ for op in (operator.add, operator.sub, operator.mul, operator.floordiv, operator
 # skill: max_of_two_three
 title: Наибольшее из двух или трёх чисел
 topics: Условия; Встроенные функции
-match: (MAX | MIN) & (TWO | THREE) & !LIST & !DIGIT & !MATRIX & !STRING & !SUBSEQUENCE & !COMMON & !WORD & !SUBSTRING
+match: (MAX | MIN) & (TWO | THREE) & !LIST & !DIGIT & !MATRIX & !STRING & !SUBSEQUENCE & !COMMON & !WORD & !SUBSTRING & !N_ITEMS
 boost: NUMBER
 priority: 1.2
 input: a b c
@@ -1020,7 +1020,7 @@ print(reduce(operator.mul, range(1, n + 1), 1))
 # skill: fibonacci
 title: n-е число Фибоначчи
 topics: Рекурсия; Динамическое программирование
-match: FIBONACCI & !SUM & !EVEN & !ODD & !PRINT & !LIST
+match: FIBONACCI & !SUM & !EVEN & !ODD & !PRINT & !LIST & !RANGE & !LESS & !LESS_EQ
 priority: 2
 big: 100000
 input: n
@@ -1567,7 +1567,7 @@ print("YES" if is_prime(int(input())) else "NO")
 # skill: primes_upto
 title: Все простые числа до n
 topics: Теория чисел; Решето Эратосфена
-match: PRIME & (SIEVE | LESS_EQ | LESS | PRINT | FIRST) & !DIGIT & !LIST & !SUM & !COUNT & !CHECK
+match: PRIME & (SIEVE | LESS_EQ | LESS | PRINT | UPTO) & !DIGIT & !LIST & !SUM & !COUNT & !CHECK
 boost: SIEVE, NATURAL
 priority: 1.9
 big: 1000000
@@ -3654,4 +3654,297 @@ from math import gcd
 
 n = int(input())
 print(sum(1 for k in range(1, n + 1) if gcd(k, n) == 1))
+```
+
+# skill: fibonacci_upto
+title: Числа Фибоначчи, не превосходящие n
+topics: Циклы; Последовательности
+match: FIBONACCI & (UPTO | LESS_EQ) & !SUM & !COUNT & !EVEN & !ODD
+priority: 2.3
+input: n
+input_desc: Одна строка: целое n ≥ 0.
+output_desc: Все числа Фибоначчи 0, 1, 1, 2, 3, 5, … не больше n, через пробел.
+understood: Дано n. Вывести все числа Фибоначчи, не превосходящие n.
+algorithm: Генерация последовательности до границы
+why: Числа Фибоначчи растут экспоненциально, поэтому до n их всего O(log n) — цикл короткий даже для n = 10¹⁸.
+ideas: while a <= n; Список и append; Генератор с yield и itertools.takewhile
+structures: int, list
+links: algo:dp, lib:itertools.takewhile, py:topic:generators
+edge: n = 0: выводится только 0.
+edge: n = 1: 0 1 1 (единица встречается в последовательности дважды).
+sample: 0 => 0
+sample: 1 => 0 1 1
+sample: 10 => 0 1 1 2 3 5 8
+sample: 100 => 0 1 1 2 3 5 8 13 21 34 55 89
+
+## Две переменные и while
+approach: vars
+role: beginner
+time: O(log n)
+memory: O(1) (кроме вывода)
+idea: Держим пару соседних чисел (a, b) и сдвигаем её, пока a не превысит n.
+principle: a, b = b, a + b переходит к следующей паре; условие a <= n останавливает цикл на первом числе больше n.
+pros: Просто и быстро; Не хранит лишнего
+cons: —
+when: Почти всегда.
+readability: 5
+```python
+n = int(input())
+a, b = 0, 1
+result = []
+while a <= n:
+    result.append(a)
+    a, b = b, a + b
+print(*result)
+```
+
+## Список и append
+approach: list
+role: alternative
+time: O(log n)
+memory: O(log n)
+idea: Дописываем в список суммы двух последних элементов, пока очередная сумма не больше n.
+principle: Список начинается с [0, 1]; при n = 0 единица лишняя, поэтому при выводе оставляем только значения ≤ n.
+pros: Вся последовательность доступна для дальнейших вычислений
+cons: Нужно аккуратно обработать маленькие n
+when: Когда числа понадобятся ещё раз.
+readability: 4
+```python
+n = int(input())
+fib = [0, 1]
+while fib[-1] + fib[-2] <= n:
+    fib.append(fib[-1] + fib[-2])
+print(*(x for x in fib if x <= n))
+```
+
+## Генератор и takewhile
+approach: generator
+role: pythonic
+time: O(log n)
+memory: O(1) на генератор
+idea: Бесконечный генератор выдаёт числа Фибоначчи, itertools.takewhile берёт их, пока они не больше n.
+principle: takewhile(условие, итератор) прекращает работу на первом элементе, для которого условие ложно; генератор не вычисляет лишнего.
+pros: Разделяет «как получить последовательность» и «где остановиться»
+cons: Нужно понимать генераторы и lambda
+when: Когда последовательность используется в разных местах программы.
+readability: 3
+```python
+from itertools import takewhile
+
+
+def fibonacci():
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+
+
+n = int(input())
+print(*takewhile(lambda x: x <= n, fibonacci()))
+```
+
+# skill: first_n_primes
+title: Первые n простых чисел
+topics: Теория чисел; Простые числа
+match: PRIME & FIRST & !SUM & !COUNT & !CHECK & !LIST & !DIGIT & !GREATER & !GREATER_EQ & !LESS & !LESS_EQ & !RANGE & !UPTO
+boost: NUMBER, PRINT
+priority: 2.2
+input: n
+input_desc: Одна строка: n ≥ 1.
+output_desc: Первые n простых чисел через пробел.
+understood: Дано n. Вывести первые n простых чисел (2, 3, 5, 7, 11, …).
+algorithm: Перебор кандидатов с проверкой делителями-простыми
+why: Число x составное только если делится на простое p ≤ √x, поэтому достаточно проверять уже найденные простые до √x.
+ideas: Деление только на найденные простые до √x; Решето с оценкой границы n(ln n + ln ln n); Бесконечный перебор count(2) + filter + islice
+structures: list
+links: algo:primes, algo:sieve, lib:math.isqrt, lib:itertools.islice
+edge: n = 1: выводится 2.
+edge: Заранее неизвестно, до какого числа искать: n-е простое ≈ n·ln n.
+sample: 1 => 2
+sample: 5 => 2 3 5 7 11
+sample: 10 => 2 3 5 7 11 13 17 19 23 29
+sample: 25 => 2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97
+
+## Проверка делителями-простыми
+approach: trial-primes
+role: beginner
+time: O(n·√p / ln p), p — n-е простое
+memory: O(n)
+idea: Перебираем x = 2, 3, 4, … и проверяем делимость только на уже найденные простые, пока p² ≤ x.
+principle: Если у x есть делитель, то есть и простой делитель не больше √x, а все такие простые уже лежат в списке primes.
+pros: Не нужно знать границу заранее; Понятная логика
+cons: Медленнее решета при больших n
+when: Для n до нескольких десятков тысяч.
+readability: 4
+```python
+n = int(input())
+primes = []
+x = 2
+while len(primes) < n:
+    is_prime = True
+    for p in primes:
+        if p * p > x:
+            break
+        if x % p == 0:
+            is_prime = False
+            break
+    if is_prime:
+        primes.append(x)
+    x += 1
+print(*primes)
+```
+
+## Решето с оценкой границы
+approach: sieve
+role: efficient
+time: O(m log log m), m ≈ n·ln n
+memory: O(m)
+idea: Оцениваем, до какого числа точно хватит n простых, и запускаем решето Эратосфена до этой границы.
+principle: По теореме Россера при n ≥ 6 n-е простое меньше n·(ln n + ln ln n); для n < 6 хватает границы 15. Решето вычёркивает кратные, остаётся взять первые n простых.
+pros: Самый быстрый способ для больших n (10⁵–10⁶)
+cons: Нужна математическая оценка границы; Память O(m)
+when: Когда n большое.
+readability: 3
+python: 3.8
+```python
+import math
+
+n = int(input())
+limit = 15 if n < 6 else int(n * (math.log(n) + math.log(math.log(n)))) + 1
+sieve = [True] * (limit + 1)
+sieve[0] = sieve[1] = False
+for i in range(2, math.isqrt(limit) + 1):
+    if sieve[i]:
+        sieve[i * i::i] = [False] * len(range(i * i, limit + 1, i))
+primes = [i for i, ok in enumerate(sieve) if ok]
+print(*primes[:n])
+```
+
+## count + filter + islice
+approach: lazy
+role: pythonic
+time: O(p·√p), p — n-е простое
+memory: O(1) на перебор
+idea: Бесконечный поток чисел count(2) фильтруется функцией is_prime, islice берёт первые n.
+principle: count, filter и islice ленивые: числа проверяются только до тех пор, пока не набралось n простых.
+pros: Коротко и выразительно; Функцию is_prime можно переиспользовать
+cons: Проверка каждого числа делением медленнее двух других способов
+when: Для небольших n и демонстрации ленивых итераторов.
+readability: 4
+python: 3.8
+```python
+import math
+from itertools import count, islice
+
+
+def is_prime(x):
+    return all(x % d for d in range(2, math.isqrt(x) + 1))
+
+
+n = int(input())
+print(*islice(filter(is_prime, count(2)), n))
+```
+
+# skill: next_prime
+title: Наименьшее простое число, большее n
+topics: Теория чисел; Простые числа
+match: PRIME & GREATER & (FIRST | MIN | NEXT_GREATER) & !LIST & !COUNT & !SUM & !DIGIT
+boost: NUMBER
+priority: 2.3
+input: n
+input_desc: Одна строка: целое n ≥ 0.
+output_desc: Наименьшее простое число, строго большее n.
+understood: Дано n. Найти первое (наименьшее) простое число, которое больше n.
+algorithm: Перебор кандидатов n + 1, n + 2, … с проверкой на простоту
+why: Простые числа встречаются часто: между n и 2n всегда есть простое (постулат Бертрана), а в среднем следующее простое отстоит от n примерно на ln n.
+ideas: Проверка делителями до √x; Решето на отрезке (n, 2n] по постулату Бертрана; next() с генератором и itertools.count
+structures: int, list[bool]
+links: algo:primes, algo:sieve, lib:math.isqrt, lib:itertools.count
+edge: n = 0 или n = 1: ответ 2.
+edge: n простое — ответ всё равно больше n (например, для 13 это 17).
+sample: 10 => 11
+sample: 1 => 2
+sample: 0 => 2
+sample: 13 => 17
+sample: 24 => 29
+sample: 100 => 101
+
+## Перебор с проверкой до √x
+approach: trial
+role: beginner
+time: O(g·√n), g — расстояние до следующего простого (≈ ln n)
+memory: O(1)
+idea: Начиная с n + 1, проверяем числа по очереди функцией is_prime.
+principle: x простое, если не делится ни на одно d от 2 до ⌊√x⌋: у составного числа обязательно есть делитель не больше √x.
+pros: Просто; Почти не использует память
+cons: Для каждого кандидата заново перебираются делители
+when: Почти всегда: следующее простое близко.
+readability: 5
+python: 3.8
+```python
+import math
+
+
+def is_prime(x):
+    if x < 2:
+        return False
+    for d in range(2, math.isqrt(x) + 1):
+        if x % d == 0:
+            return False
+    return True
+
+
+n = int(input())
+x = n + 1
+while not is_prime(x):
+    x += 1
+print(x)
+```
+
+## Решето на отрезке (n, 2n]
+approach: segment-sieve
+role: alternative
+time: O(n log log n)
+memory: O(n)
+idea: По постулату Бертрана простое есть на отрезке (n, 2n], поэтому вычёркиваем на нём составные и берём первое оставшееся.
+principle: Для каждого d ≤ √(2n) вычёркиваем кратные d на отрезке, начиная с max(d², первого кратного ≥ n + 1). Невычеркнутые числа ≥ 2 — простые.
+pros: Показывает сегментное решето — основу поиска простых на больших отрезках
+cons: Память O(n): для n ~ 10¹² не подходит
+when: Когда нужны все простые на отрезке, а не только первое.
+readability: 3
+python: 3.8
+```python
+import math
+
+n = int(input())
+lo, hi = n + 1, max(2 * n, 2)
+is_p = [True] * (hi - lo + 1)
+for d in range(2, math.isqrt(hi) + 1):
+    start = max(d * d, (lo + d - 1) // d * d)
+    for m in range(start, hi + 1, d):
+        is_p[m - lo] = False
+for i, ok in enumerate(is_p):
+    if ok and lo + i >= 2:
+        print(lo + i)
+        break
+```
+
+## next() по бесконечному перебору
+approach: lazy
+role: short
+time: O(g·√n)
+memory: O(1)
+idea: itertools.count перебирает кандидатов, генератор отбирает простые, next берёт первое.
+principle: all(x % d for d in …) истинно, если x не делится ни на один d; next останавливает перебор на первом подходящем x.
+pros: Две строки логики
+cons: Плотная запись читается труднее
+when: Для коротких решений.
+readability: 3
+python: 3.8
+```python
+import math
+from itertools import count
+
+n = int(input())
+print(next(x for x in count(max(n + 1, 2)) if all(x % d for d in range(2, math.isqrt(x) + 1))))
 ```

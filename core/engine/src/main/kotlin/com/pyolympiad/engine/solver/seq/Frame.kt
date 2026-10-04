@@ -71,7 +71,7 @@ data class Frame(
             op == Op.ALL && filters.isEmpty() -> false
             op == Op.ANY && filters.isEmpty() -> false
             op == Op.REMOVE && (filters.isEmpty() || source !in setOf(Source.CHARS, Source.WORDS, Source.LIST)) -> false
-            op == Op.SELECT && filters.isEmpty() && source != Source.DIVISORS -> false
+            op == Op.SELECT && filters.isEmpty() && source !in setOf(Source.DIVISORS, Source.RANGE) -> false
             op in setOf(Op.INDEX_MAX, Op.INDEX_MIN) && source != Source.LIST -> false
             op in setOf(Op.REVERSE, Op.SORT_ASC, Op.SORT_DESC) && source in setOf(Source.RANGE, Source.DIVISORS, Source.MATRIX) -> false
             op in setOf(Op.REVERSE) && filters.isNotEmpty() -> false
@@ -95,6 +95,9 @@ object FrameDetector {
 
     private val OPS_PRIORITY = listOf("SUM", "PRODUCT", "AVERAGE", "COUNT", "MAX", "MIN")
 
+    /** Words that may accompany a request to list a range without changing its meaning. */
+    private val LISTING_WORDS = setOf("все", "всех", "всё", "vse", "vsekh", "vseh", "all", "barcha", "hamma", "them")
+
     fun detect(q: ParsedQuery): Pair<Frame, Double>? {
         // Tasks that clearly belong to a named algorithm are not sequence tasks.
         val blockers = listOf(
@@ -112,11 +115,18 @@ object FrameDetector {
         val blocked = blockers.count { q.hasStrong(it) }
 
         val source = detectSource(q) ?: return null
-        val op = detectOp(q, source) ?: return null
+        // "первых n простых чисел" is the start of an infinite sequence, not a filter over input data.
+        if (firstN(q) && q.ranges.isEmpty() && !q.has("LIST") && !q.has("ELEMENT") && !q.has("N_ITEMS") &&
+            source in setOf(Source.LIST, Source.RANGE)) return null
+        // "Выведите все числа от 1 до n": a range and nothing else asked means listing its numbers.
+        var op = detectOp(q, source)
+            ?: if (source == Source.RANGE && blocked == 0 && q.uncovered.all { it in LISTING_WORDS }) Op.SELECT else return null
         val filters = detectFilters(q, source)
+        // "barcha sonlarni chiqaring": "все" without a condition lists the range, it is not "все ли".
+        if (op == Op.ALL && filters.isEmpty() && source == Source.RANGE && blocked == 0) op = Op.SELECT
         if (op == Op.ALL && filters.isEmpty()) return null
         if (op in setOf(Op.REMOVE) && filters.isEmpty()) return null
-        if (op == Op.SELECT && filters.isEmpty() && source != Source.DIVISORS) return null
+        if (op == Op.SELECT && filters.isEmpty() && source !in setOf(Source.DIVISORS, Source.RANGE)) return null
         val transform = when {
             q.hasStrong("CUBE") -> Transform.CUBE
             q.hasStrong("SQUARE") && !q.has("PERFECT_SQUARE") && !q.has("AREA") -> Transform.SQUARE
@@ -150,9 +160,13 @@ object FrameDetector {
         if (!frame.isValid) return null
         var score = 1.0 + 0.9 + 0.25 * filters.size
         score -= 0.8 * blocked
-        if (source == Source.LIST && !q.has("LIST") && !q.has("ELEMENT")) score -= 0.4
+        if (source == Source.LIST && !q.has("LIST") && !q.has("ELEMENT") && !q.has("N_ITEMS")) score -= 0.4
         return frame to score
     }
+
+    /** "первые n …": FIRST counts how many to take, it does not ask for the first matching element. */
+    private fun firstN(q: ParsedQuery): Boolean =
+        q.hitsOf("FIRST").any { h -> q.tokens.getOrNull(h.end)?.let { it.text in q.variables } == true }
 
     private fun detectSource(q: ParsedQuery): Source? {
         val charHints = listOf("VOWEL", "CONSONANT", "LETTER", "CHAR", "UPPER", "LOWER", "SPACE")
@@ -168,7 +182,7 @@ object FrameDetector {
             (q.has("NATURAL") || q.has("PRIME") || q.has("NUMBER")) && (q.has("LESS") || q.has("LESS_EQ")) && q.params.any {
                 it.concept in setOf("LESS", "LESS_EQ") && it.value is Operand.Var
             } -> Source.RANGE
-            q.has("LIST") || q.has("ELEMENT") || q.has("SEQUENCE") -> Source.LIST
+            q.has("LIST") || q.has("ELEMENT") || q.has("SEQUENCE") || q.has("N_ITEMS") -> Source.LIST
             q.has("NUMBER") && (q.has("SUM") || q.has("COUNT") || q.has("MAX") || q.has("MIN") || q.has("AVERAGE") || q.has("PRODUCT")) &&
                 !q.has("TWO") && !q.has("THREE") -> Source.LIST
             q.has("REVERSE") && q.has("NUMBER") -> Source.DIGITS
@@ -202,7 +216,7 @@ object FrameDetector {
             q.has("EXISTS") -> Op.ANY
             numberAsCount -> Op.COUNT
             q.has("COUNT") -> Op.COUNT
-            q.has("FIRST") && !q.has("NATURAL") -> Op.FIRST
+            q.has("FIRST") && !q.has("NATURAL") && !firstN(q) -> Op.FIRST
             q.has("LAST") -> Op.LAST
             q.has("PRINT") || q.has("EACH") -> Op.SELECT
             source == Source.DIVISORS -> Op.SELECT
