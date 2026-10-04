@@ -455,10 +455,11 @@ def quiz_row(e, runner, order):
         fail("%s: unknown quiz type %r" % (where, qtype))
     question = e.get("q", "")
     code_blocks = [b for b in (e.section("Код") or []) if "code" in b and b["lang"] == "python"]
-    code = code_blocks[0]["code"] if code_blocks else ""
+    # One-line programs may be given inline as "code:" ("\n" separates lines).
+    code = code_blocks[0]["code"] if code_blocks else e.get("code", "").replace("\\n", "\n")
     stdin_blocks = [b for b in (e.section("Код") or []) if "code" in b and b["lang"] == "in"]
-    stdin = stdin_blocks[0]["code"] if stdin_blocks else ""
-    explain = plain_text(e.section("Пояснение") or [])
+    stdin = stdin_blocks[0]["code"] if stdin_blocks else e.get("stdin", "").replace("\\n", "\n")
+    explain = plain_text(e.section("Пояснение") or []) or e.get("explain", "")
     wrong = [w.strip() for w in e.get("wrong", "").split("|") if w.strip()]
     quiz = {"type": qtype, "question": question, "code": code, "explain": explain}
     row = Row(id=e.id, kind="quiz", category=e.get("category", "basics"), title=e.get("title", question[:60]),
@@ -546,7 +547,7 @@ def error_row(e, runner, order):
     fixed = [b for b in (e.section("Исправленный код") or []) if "code" in b and b["lang"] == "python"]
     if not wrong or not fixed:
         fail("%s: error entry needs 'Неправильный код' and 'Исправленный код'" % where)
-    data = {"sections": render_sections(e, Runner(), skip=("Неправильный код", "Исправленный код")), "error": {}}
+    data = {"sections": render_sections(e, runner, skip=("Неправильный код", "Исправленный код")), "error": {}}
     err = data["error"]
     err["exception"] = exc_name
 
