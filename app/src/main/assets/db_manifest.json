@@ -5,53 +5,139 @@
   {
    "domain": "python",
    "path": "python/python.db",
-   "entries": 495,
-   "size": 1449984,
-   "hash": "938bc4b90a46e1b3056901beccda072e01304981"
+   "entries": 576,
+   "size": 1785856,
+   "hash": "add113639d1512246fcd376b079557b476c46eb0"
   },
   {
    "domain": "libraries",
    "path": "libraries/libraries.db",
-   "entries": 6695,
-   "size": 7622656,
-   "hash": "40c70ea9cdeeb1388f47f781c65ab3722e8257ef"
+   "entries": 10558,
+   "size": 19968000,
+   "hash": "e7f3982eb748740ba4d82a160259644ed87eaae0"
   },
   {
    "domain": "algorithms",
    "path": "algorithms/algorithms.db",
-   "entries": 1,
-   "size": 57344,
-   "hash": "69c4a8285bbae7fdecf5eda7a399e0e319801ade"
+   "entries": 51,
+   "size": 307200,
+   "hash": "dc0e59648df69943d73eda0c6f7bef9ca98276a9"
   },
   {
    "domain": "tasks",
    "path": "tasks/tasks.db",
-   "entries": 1,
-   "size": 57344,
-   "hash": "8b7cb64b73fe25347963499fb0b92e660f111c86"
+   "entries": 220,
+   "size": 1372160,
+   "hash": "f0b7b055591a643ed904d4f18553ab2a2fbb4749"
   },
   {
    "domain": "errors",
    "path": "errors/errors.db",
-   "entries": 1,
-   "size": 57344,
-   "hash": "ed41810b1c486315a2846c395749b91327a13882"
+   "entries": 31,
+   "size": 180224,
+   "hash": "c372ff2ddf1373594ccf871cefecddfe0a98013c"
   },
   {
    "domain": "tests",
    "path": "tests/tests.db",
-   "entries": 4,
-   "size": 57344,
-   "hash": "530205bd9867b48e8e1a6d07771e97e1d01e4896"
+   "entries": 303,
+   "size": 397312,
+   "hash": "1ca1c58d70d324e5063545321af5064c750423f4"
   },
   {
    "domain": "github",
    "path": "github/github.db",
-   "entries": 1,
-   "size": 57344,
-   "hash": "1c0264419f447ebfe024d29367cb4f42e044714f"
+   "entries": 83,
+   "size": 204800,
+   "hash": "98dc9c55840a1546ab2766a99d30425addbf1526"
   }
  ],
- "external_libraries": [],
- "version": "371c892475b2b1ef"
+ "external_libraries": [
+  {
+   "module": "numpy",
+   "name": "NumPy",
+   "version": "2.4.6"
+  },
+  {
+   "module": "pandas",
+   "name": "Pandas",
+   "version": "3.0.6"
+  },
+  {
+   "module": "matplotlib",
+   "name": "Matplotlib",
+   "version": "3.11.2"
+  },
+  {
+   "module": "requests",
+   "name": "Requests",
+   "version": "2.34.2"
+  },
+  {
+   "module": "bs4",
+   "name": "BeautifulSoup",
+   "version": "4.15.0"
+  },
+  {
+   "module": "flask",
+   "name": "Flask",
+   "version": "3.1.3"
+  },
+  {
+   "module": "django",
+   "name": "Django",
+   "version": "5.2.17"
+  },
+  {
+   "module": "fastapi",
+   "name": "FastAPI",
+   "version": "0.142.2"
+  },
+  {
+   "module": "pygame",
+   "name": "Pygame",
+   "version": "2.6.1"
+  },
+  {
+   "module": "PIL",
+   "name": "Pillow",
+   "version": "12.3.0"
+  },
+  {
+   "module": "cv2",
+   "name": "OpenCV",
+   "version": "5.0.0"
+  },
+  {
+   "module": "sklearn",
+   "name": "Scikit-learn",
+   "version": "1.9.1"
+  },
+  {
+   "module": "torch",
+   "name": "PyTorch",
+   "version": "2.14.1+cpu"
+  },
+  {
+   "module": "tensorflow",
+   "name": "TensorFlow",
+   "version": "2.21.0"
+  },
+  {
+   "module": "sqlalchemy",
+   "name": "SQLAlchemy",
+   "version": "2.1.3"
+  },
+  {
+   "module": "selenium",
+   "name": "Selenium",
+   "version": "4.50.0"
+  },
+  {
+   "module": "pytest",
+   "name": "pytest",
+   "version": "9.1.1"
+  }
+ ],
+ "version": "1efdc51839dc4288"
 }

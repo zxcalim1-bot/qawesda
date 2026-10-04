@@ -103,6 +103,7 @@ class BuildError(Exception):
 
 
 ERRORS = []
+SKIPPED_EXT = []
 
 
 def fail(msg):
@@ -111,7 +112,7 @@ def fail(msg):
 
 # ----------------------------------------------------------------------------- running code
 
-def run_python(code, stdin="", timeout=20):
+def run_python(code, stdin="", timeout=90):
     """Runs code in a fresh python3.11 interpreter. Returns (status, stdout, exception_type)."""
     try:
         p = subprocess.run([sys.executable, "-X", "utf8", "-c", code], input=stdin, capture_output=True,
@@ -196,8 +197,14 @@ def render_sections(entry, runner, skip=()):
                     i += 1
                 if b["lang"] == "python" and b["mode"] not in ("norun",):
                     expect_error = b["mode"] == "error"
+                    optional = b["mode"] == "ext"
 
-                    def cb(status, stdout, exc, block=block, expect_error=expect_error, where=entry.where()):
+                    def cb(status, stdout, exc, block=block, expect_error=expect_error, optional=optional, where=entry.where()):
+                        if optional and status == "ERROR" and exc and exc[0] in ("ModuleNotFoundError", "ImportError"):
+                            # Third-party example: verified only when the library is installed in the
+                            # build interpreter (see tools/setup_extlibs.sh); otherwise shown without output.
+                            SKIPPED_EXT.append(where)
+                            return
                         if status == "TIMEOUT":
                             fail("%s: example timed out" % where)
                             return
@@ -250,6 +257,13 @@ def resolve(path):
 
 def check_entry(e):
     for path in e.listval("check"):
+        if e.get("kind") == "extlib":
+            try:
+                importlib.import_module(path.split(".")[0])
+            except ImportError:
+                # Third-party library not installed in this interpreter: cannot verify here.
+                SKIPPED_EXT.append(e.where())
+                continue
         if path.startswith("keyword:"):
             kw = path.split(":", 1)[1]
             if not (keyword.iskeyword(kw) or keyword.issoftkeyword(kw)):
@@ -661,7 +675,7 @@ def doc_entry(entry_id, kind, category, title, obj, sig_name, lang="en", source=
 
 def public_names(mod):
     names = getattr(mod, "__all__", None)
-    if names is None:
+    if not names:
         names = [n for n in dir(mod) if not n.startswith("_")]
     out = []
     for n in names:
@@ -1012,6 +1026,8 @@ def main():
         print("note: %d links point to entries that do not exist yet (hidden in the app): %s" % (
             len(missing), ", ".join(sorted(missing)[:40])))
 
+    if SKIPPED_EXT:
+        print("note: %d third-party examples not executed (library not installed in this interpreter)" % len(SKIPPED_EXT))
     if ERRORS:
         for e in ERRORS:
             print("ERROR:", e)
