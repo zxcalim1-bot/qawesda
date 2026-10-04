@@ -56,7 +56,11 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
-            all { it.maxHeapSize = "2g" }
+            all {
+                it.maxHeapSize = "2g"
+                // Robolectric native graphics (screenshot tests) reads direct buffers.
+                it.jvmArgs("--add-opens=java.base/java.nio=ALL-UNNAMED")
+            }
         }
     }
 }

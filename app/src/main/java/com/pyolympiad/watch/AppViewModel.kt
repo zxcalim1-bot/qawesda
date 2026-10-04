@@ -257,8 +257,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         _code.update { it.copy(running = true) }
         viewModelScope.launch {
             val report = withContext(Dispatchers.Default) { container.engine.analyzer.analyze(s.text) }
+            _code.update { it.copy(analysis = report) }
+            // Then the authoritative CPython compile() check, when the runtime is available.
             val syntax = runCatching { container.python.check(s.text) }.getOrNull()
-            _code.update { it.copy(running = false, analysis = report, syntax = syntax) }
+            _code.update { it.copy(running = false, syntax = syntax) }
         }
     }
 

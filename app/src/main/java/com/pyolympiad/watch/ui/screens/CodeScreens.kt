@@ -114,7 +114,7 @@ fun CodeEditorScreen(vm: AppViewModel, nav: NavHostController) {
         if (code.taskId != null) textItem(item, "Привязан к задаче — можно проверить на тестах", PyPalette.muted, center = true, small = true)
         code.lines.forEachIndexed { i, line ->
             val isSel = selected == i
-            navButton(item, "${i + 1}│" + line.replace(" ", "·").ifEmpty { "·" }, tone = if (isSel) Tone.PRIMARY else Tone.OUTLINED, key = "line$i$line") {
+            navButton(item, "${i + 1}│" + showIndent(line), tone = if (isSel) Tone.PRIMARY else Tone.OUTLINED, key = "line$i$line") {
                 selected = if (isSel) null else i
             }
             if (isSel) {
@@ -244,4 +244,10 @@ fun AnalysisScreen(vm: AppViewModel, nav: NavHostController) {
         infoCard(item, "Статистика", "Строк: ${r.stats.lines}, функций: ${r.stats.functions.size}, циклов: ${r.stats.loops}, вложенность: ${r.stats.maxLoopDepth}" +
             if (r.stats.imports.isNotEmpty()) "\nИмпорт: " + r.stats.imports.joinToString(", ") else "")
     }
+}
+
+/** Leading spaces are drawn as dots so the indentation is visible on the small screen. */
+private fun showIndent(line: String): String {
+    val n = line.takeWhile { it == ' ' }.length
+    return ("·".repeat(n) + line.substring(n)).ifEmpty { "·" }
 }

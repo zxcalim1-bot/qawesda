@@ -53,12 +53,19 @@ class PythonRuntime(private val context: Context) {
         private set
 
     private fun module() = run {
-        if (!Python.isStarted()) Python.start(AndroidPlatform(context))
-        Python.getInstance().getModule("pyolymp_runner")
+        startError?.let { throw IllegalStateException("Python не запустился: $it") }
+        runCatching {
+            if (!Python.isStarted()) Python.start(AndroidPlatform(context))
+            Python.getInstance().getModule("pyolymp_runner")
+        }.getOrElse {
+            // A failed start (missing native libraries) is permanent for this process: fail fast later.
+            startError = it.message ?: it.javaClass.simpleName
+            throw it
+        }
     }
 
     suspend fun warmUp(): Boolean = withContext(Dispatchers.Default) {
-        runCatching { module(); true }.getOrElse { startError = it.message; false }
+        runCatching { module(); true }.getOrDefault(false)
     }
 
     private suspend fun call(fn: String, payload: JSONObject): JSONObject = mutex.withLock {

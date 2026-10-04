@@ -22,6 +22,7 @@ import com.pyolympiad.watch.ui.kit.codeItem
 import com.pyolympiad.watch.ui.kit.header
 import com.pyolympiad.watch.ui.kit.infoCard
 import com.pyolympiad.watch.ui.kit.kindTitle
+import com.pyolympiad.watch.ui.kit.kindTitlePlural
 import com.pyolympiad.watch.ui.kit.levelTitle
 import com.pyolympiad.watch.ui.kit.navButton
 import com.pyolympiad.watch.ui.kit.sectionsItems
@@ -42,7 +43,7 @@ fun CategoryListScreen(vm: AppViewModel, nav: NavHostController, domainKey: Stri
     }
     val list = cats ?: return LoadingScreen()
     ScreenList { item ->
-        header(item, "${domain.titleRu}: ${kindTitle(kind)}")
+        header(item, kindTitlePlural(kind))
         if (list.isEmpty()) textItem(item, "Раздел пока пуст.", PyPalette.muted, center = true)
         for (c in list) navButton(item, c.name, "${c.count}", key = c.name) { nav.navigate(R.list(domainKey, kind, c.name)) }
     }
@@ -58,7 +59,7 @@ fun EntryListScreen(vm: AppViewModel, nav: NavHostController, domainKey: String,
     val solved by produceState(emptySet<String>()) { value = withContext(Dispatchers.IO) { vm.store.solvedTaskIds() } }
     val list = entries ?: return LoadingScreen()
     ScreenList { item ->
-        header(item, category ?: kind?.let { kindTitle(it) } ?: domain.titleRu)
+        header(item, category ?: kind?.let { kindTitlePlural(it) } ?: domain.titleRu)
         if (list.isEmpty()) textItem(item, "Записей нет.", PyPalette.muted, center = true)
         for (e in list) {
             val mark = if (e.id in solved) "✓ " else ""

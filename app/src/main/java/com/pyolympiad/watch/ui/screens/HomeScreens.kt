@@ -1,6 +1,7 @@
 package com.pyolympiad.watch.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
@@ -106,9 +107,12 @@ private fun androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope.qu
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             for ((label, action) in listOf(a, b)) {
-                FilledTonalButton(onClick = action, modifier = Modifier.weight(1f), transformation = SurfaceTransformation(item.spec)) {
+                FilledTonalButton(
+                    onClick = action, modifier = Modifier.weight(1f), transformation = SurfaceTransformation(item.spec),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
+                ) {
                     Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelMedium, modifier = Modifier.fillMaxWidth())
+                        style = MaterialTheme.typography.labelSmall, modifier = Modifier.fillMaxWidth())
                 }
             }
         }

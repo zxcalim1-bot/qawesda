@@ -254,3 +254,11 @@ fun kindTitle(kind: String): String = when (kind) {
     "algorithm" -> "Алгоритм"; "task" -> "Задача"; "error" -> "Ошибка"; "quiz" -> "Вопрос теста"; "project" -> "Проект"
     else -> kind
 }
+
+fun kindTitlePlural(kind: String): String = when (kind) {
+    "builtin" -> "Встроенные функции"; "keyword" -> "Ключевые слова"; "operator" -> "Операторы"; "method" -> "Методы типов"
+    "topic" -> "Статьи"; "exception" -> "Исключения"; "cpython" -> "CPython изнутри"; "langref" -> "Справочник языка"
+    "module" -> "Модули"; "member" -> "Функции модулей"; "extlib" -> "Внешние библиотеки"; "extmember" -> "API библиотек"
+    "algorithm" -> "Алгоритмы"; "task" -> "Задачи"; "error" -> "Ошибки"; "quiz" -> "Вопросы"; "project" -> "Проекты"
+    else -> kind
+}
