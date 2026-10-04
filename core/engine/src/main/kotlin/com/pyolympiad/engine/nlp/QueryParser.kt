@@ -126,6 +126,9 @@ class QueryParser(private val lexicon: Lexicon) {
                     hits += h.copy(concept = if (h.concept == "LE_PHRASE") "LESS_EQ" else "GREATER_EQ")
                     continue
                 }
+                // "не превосходящих n": a filter/bound given by a variable.
+                val varNext = (h.end until minOf(tokens.size, h.end + 2)).any { tokens[it].type == TokenType.WORD && tokens[it].text in variables }
+                if (varNext) hits += h.copy(concept = if (h.concept == "LE_PHRASE") "LESS_EQ" else "GREATER_EQ")
                 continue
             }
             hits += h
@@ -180,6 +183,9 @@ class QueryParser(private val lexicon: Lexicon) {
             }
         }
 
+        // Parsed ranges are concepts too ("от 1 до n" means the task is about a range of numbers).
+        for (r in ranges) hits += ConceptHit("RANGE", r.start, r.end, LexLang.RU, "range", "от … до", weak = false, fuzzy = false)
+
         val inputs = tokens.withIndex().filter { (i, t) ->
             t.type == TokenType.NUMBER && i !in usedNumberIdx && i !in rangeTokenIdx
         }.map { it.value }
@@ -191,7 +197,7 @@ class QueryParser(private val lexicon: Lexicon) {
             normalized = normalized,
             tokens = tokens,
             language = language,
-            hits = hits,
+            hits = hits.filter { !it.concept.startsWith("_") },
             corrections = corrections,
             bounds = bounds,
             ranges = ranges,

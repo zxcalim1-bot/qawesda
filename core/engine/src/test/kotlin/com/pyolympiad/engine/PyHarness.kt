@@ -41,10 +41,10 @@ def run(code, stdin):
     return status, out.getvalue()
 res = []
 for line in open(sys.argv[1], encoding="utf-8"):
-    line = line.strip()
+    line = line.rstrip("\n")
     if not line:
         continue
-    c, i = line.split(" ")
+    c, i = line.split(" ", 1)
     status, out = run(base64.b64decode(c).decode(), base64.b64decode(i).decode())
     res.append(base64.b64encode(status.encode()).decode() + " " + base64.b64encode(out.encode()).decode())
 open(sys.argv[2], "w", encoding="utf-8").write("\n".join(res) + "\n")

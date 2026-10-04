@@ -165,7 +165,7 @@ object FrameDetector {
             charHints.any { q.has(it) } || q.has("STRING") -> Source.CHARS
             q.has("DIGIT") -> Source.DIGITS
             q.ranges.isNotEmpty() -> Source.RANGE
-            q.has("NATURAL") && (q.has("LESS") || q.has("LESS_EQ")) && q.params.any {
+            (q.has("NATURAL") || q.has("PRIME") || q.has("NUMBER")) && (q.has("LESS") || q.has("LESS_EQ")) && q.params.any {
                 it.concept in setOf("LESS", "LESS_EQ") && it.value is Operand.Var
             } -> Source.RANGE
             q.has("LIST") || q.has("ELEMENT") || q.has("SEQUENCE") -> Source.LIST

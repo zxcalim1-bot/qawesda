@@ -1,0 +1,166 @@
+# Multilingual synonym groups for local search (Russian / Russian translit / English / Uzbek).
+# One group per line, terms separated by ";". Used by QueryExpander: a query word expands
+# to all terms of its groups. Spelling variants are matched via skeleton forms automatically.
+строка; строки; строковый; stroka; stroki; string; strings; str; satr; matn; text; текст
+список; списки; spisok; list; lists; ro'yxat; royxat
+массив; массивы; massiv; array; arrays
+словарь; словари; slovar; dictionary; dict; lug'at; lugat; mapping
+множество; множества; mnozhestvo; set; sets; to'plam; toplam
+кортеж; кортежи; kortezh; tuple; tuples
+цикл; циклы; cikl; tsikl; sikl; loop; loops; takrorlash
+условие; условия; uslovie; condition; conditions; if; shart
+функция; функции; funkciya; funktsiya; funksiya; function; functions; def; funksiya
+метод; методы; metod; method; methods; usul
+класс; классы; klass; class; classes; sinf
+объект; объекты; obekt; object; objects; obyekt
+переменная; переменные; peremennaya; variable; variables; o'zgaruvchi; ozgaruvchi
+число; числа; chislo; number; numbers; son; sonlar; int; integer; целое
+дробь; дробное; вещественное; float; floating; kasr; decimal
+задача; задачи; zadacha; task; tasks; problem; masala; topshiriq
+решение; решения; reshenie; solution; solutions; yechim
+ошибка; ошибки; oshibka; error; errors; exception; исключение; xato; bug
+проверка; proverka; check; test; tekshirish; тест; тесты
+сумма; summa; sum; yig'indi; yigindi
+максимум; максимальный; наибольший; maksimum; max; maximum; largest; eng katta
+минимум; минимальный; наименьший; minimum; min; smallest; eng kichik
+сортировка; сортировать; sortirovka; sort; sorting; sorted; saralash
+поиск; искать; poisk; search; find; qidiruv; qidirish
+бинарный поиск; двоичный поиск; binarnyi poisk; binary search; bisect
+рекурсия; rekursiya; recursion; recursive; rekursiya
+генератор; генераторы; generator; generators; yield
+итератор; итераторы; iterator; iterators; iter; next
+декоратор; декораторы; decorator; decorators; dekorator
+срез; срезы; slice; slicing; srez; kesim
+индекс; индексы; index; indices; indeks
+ввод; vvod; input; kiritish; stdin
+вывод; vyvod; print; output; chiqarish; stdout
+файл; файлы; fail; file; files; fayl; open
+модуль; модули; modul; module; modules; import; библиотека
+библиотека; библиотеки; biblioteka; library; libraries; package; пакет; kutubxona
+граф; графы; graf; graph; graphs
+дерево; деревья; derevo; tree; trees; daraxt
+очередь; ochered; queue; deque; navbat
+стек; stek; stack
+куча; kucha; heap; heapq; priority queue; приоритетная очередь
+обход в ширину; bfs; breadth first search; в ширину
+обход в глубину; dfs; depth first search; в глубину
+кратчайший путь; кратчайшие пути; shortest path; dijkstra; дейкстра
+динамическое программирование; дп; dp; dynamic programming; dinamik dasturlash
+жадный; жадные алгоритмы; greedy; ochko'z
+префиксные суммы; префиксная сумма; prefix sum; prefix sums; cumulative sum; accumulate
+два указателя; two pointers; dva ukazatelya
+скользящее окно; sliding window; okno
+простое число; простые числа; prostoe chislo; prime; primes; tub son
+решето эратосфена; решето; sieve; eratosthenes
+нод; наибольший общий делитель; gcd; greatest common divisor; ekub
+нок; наименьшее общее кратное; lcm; least common multiple; ekuk
+делитель; делители; delitel; divisor; divisors; bo'luvchi; boluvchi
+факториал; factorial; faktorial
+фибоначчи; fibonacci; fibonachchi
+палиндром; палиндромы; palindrome; palindrom
+анаграмма; anagram; anagramma
+система счисления; системы счисления; base; radix; number system; sanoq sistemasi
+двоичная; binary; bin; ikkilik
+шестнадцатеричная; hex; hexadecimal
+битовые операции; биты; bits; bitwise; bit; xor
+матрица; матрицы; matrica; matritsa; matrix; matrices; двумерный массив; 2d list
+комбинаторика; kombinatorika; combinatorics; сочетания; перестановки; combinations; permutations
+перебор; perebor; brute force; backtracking; перебор с возвратом
+сложность; slozhnost; complexity; big o; o большое; асимптотика; murakkablik
+память; pamyat; memory; xotira
+время; vremya; time; vaqt
+олимпиада; olimpiada; olympiad; contest; соревнование
+python; питон; piton; пайтон; payton
+интерпретатор; interpreter; cpython
+байткод; bytecode; dis
+сборщик мусора; garbage collector; gc; сборка мусора
+подсчёт ссылок; reference counting; refcount; sys.getrefcount
+gil; global interpreter lock; глобальная блокировка интерпретатора
+асинхронность; async; await; asyncio; асинхронный
+поток; потоки; thread; threads; threading
+процесс; процессы; process; multiprocessing; jarayon
+исключение; исключения; exception; exceptions; try; except; raise
+отступ; отступы; indentation; indent; IndentationError; chekinish
+синтаксис; sintaksis; syntax; SyntaxError
+тип; типы; tip; type; types; typing; аннотации типов; type hints
+лямбда; lambda; анонимная функция
+списковое включение; генератор списка; list comprehension; comprehension; comprehensions
+f-строка; f-строки; f-string; fstring; форматирование; format
+округление; okruglenie; round; rounding; yaxlitlash
+модуль числа; abs; absolute value; абсолютное значение
+остаток; ostatok; remainder; modulo; mod; qoldiq
+деление; delenie; division; floor division; целочисленное деление; bo'lish
+степень; stepen; power; pow; exponent; daraja
+корень; koren; root; sqrt; isqrt; ildiz
+случайное; random; случайные числа; tasodifiy
+дата; даты; date; datetime; время; sana
+регулярные выражения; regex; regular expression; re; регулярка
+json; джейсон; сериализация; serialization
+база данных; базы данных; database; sqlite; sqlite3; sql
+тестирование; testing; unittest; pytest; doctest
+логирование; logging; логи; журнал
+аргументы командной строки; argparse; sys.argv; command line
+виртуальное окружение; venv; virtualenv; virtual environment
+упаковка; packaging; pip; setup.py; pyproject
+ооп; объектно-ориентированное программирование; oop; object oriented
+наследование; nasledovanie; inheritance; meros
+полиморфизм; polymorphism
+инкапсуляция; encapsulation
+абстракция; abstraction; abc; abstract
+свойство; свойства; property; getter; setter
+магические методы; dunder; special methods; __init__; __str__; __repr__
+контекстный менеджер; context manager; with
+дескриптор; дескрипторы; descriptor; descriptors
+метакласс; метаклассы; metaclass; metaclasses
+dataclass; dataclasses; датакласс
+enum; перечисление; enumeration
+numpy; нампай; numpy массив; ndarray
+pandas; панды; dataframe; датафрейм
+matplotlib; график; графики; plot; plotting
+requests; http запросы; http
+flask; фласк
+django; джанго
+fastapi; фастапи
+pygame; пайгейм; игры
+opencv; cv2; компьютерное зрение
+scikit-learn; sklearn; машинное обучение; machine learning
+pytorch; torch; нейросети; neural networks
+tensorflow; keras
+sqlalchemy; orm
+selenium; веб драйвер; browser automation
+beautifulsoup; bs4; парсинг html; html parsing
+pillow; pil; изображения; images
+NameError; нет такого имени; name is not defined
+TypeError; неверный тип; type error
+ValueError; неверное значение; value error
+IndexError; выход за границы; index out of range
+KeyError; нет ключа; key error
+ZeroDivisionError; деление на ноль; division by zero
+RecursionError; глубина рекурсии; recursion depth
+AttributeError; нет атрибута; attribute error
+ImportError; ModuleNotFoundError; модуль не найден; no module named
+FileNotFoundError; файл не найден; no such file
+github; гитхаб; репозиторий; repository; open source; открытый код
+прогресс; progress; статистика; statistics
+избранное; favorites; bookmarks; закладки
+подсказка; подсказки; hint; hints; maslahat
+ответ; ответы; answer; javob
+пример; примеры; example; examples; misol
+цифра; цифры; cifra; tsifra; digit; digits; raqam
+слово; слова; slovo; word; words; so'z; soz
+буква; буквы; bukva; letter; letters; harf
+символ; символы; simvol; character; char; chars; belgi
+чётный; четный; even; juft
+нечётный; нечетный; odd; toq
+положительный; positive; musbat
+отрицательный; negative; manfiy
+количество; kolichestvo; count; how many; nechta; soni
+среднее; srednee; average; mean; o'rtacha
+произведение; proizvedenie; product; ko'paytma
+разность; разница; difference; ayirma
+обратный порядок; reverse; reversed; разворот; teskari
+пробел; пробелы; space; whitespace; probel
+регистр; заглавные; строчные; upper; lower; case
+замена; zamena; replace; almashtirish
+удаление; удалить; delete; remove; del; o'chirish
+добавление; добавить; append; add; insert; qo'shish

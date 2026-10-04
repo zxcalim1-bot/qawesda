@@ -1,0 +1,53 @@
+# Word-level transliteration and spelling variants (Russian written in Latin letters, common
+# typos, Uzbek spellings). Character-level rules (sh→ш, ch→ч, zh→ж, ya→я, yu→ю, yo→ё,
+# kh→х, ts→ц, ...) are built into the engine; this file adds whole-word variants that the
+# rules alone do not cover. Format: same as synonyms — terms separated by ";".
+привет; privet; privyet; salom
+спасибо; spasibo; rahmat
+задача; zadacha; zadachka; zadaca; zadacha
+решение; reshenie; resheniye; reshenia
+функция; funkciya; funktsiya; funkcia; funksiya; funktsiia; funkcija
+программа; programma; programa; dastur
+матрица; matrica; matritsa; matritca; matrisa
+словарь; slovar; slovar'; slovari; lug'at
+массив; massiv; masiv; massive
+список; spisok; spiski; spisoc
+строка; stroka; stroki; stroca; satr
+цикл; cikl; tsikl; sikl; cykl
+условие; uslovie; usloviye; shart
+число; chislo; chisla; chisel; son
+сумма; summa; suma; yig'indi
+проверка; proverka; proverit; tekshirish
+переменная; peremennaya; peremenaya; o'zgaruvchi
+алгоритм; algoritm; algorithm; algoritmy
+сортировка; sortirovka; sortirovca; saralash
+рекурсия; rekursiya; rekursia; recursiya; rekursiya
+ошибка; oshibka; oshibki; owibka; xato
+делитель; delitel; deliteli; bo'luvchi
+простое; prostoe; prostoye; prostye; tub
+чётное; chetnoe; chetnoye; chetnye; juft
+нечётное; nechetnoe; nechetnye; toq
+максимум; maksimum; maximum; maks; eng katta
+минимум; minimum; minimal; eng kichik
+количество; kolichestvo; kolichestvo; kol-vo; soni
+палиндром; palindrom; palindrome
+факториал; faktorial; factorial
+фибоначчи; fibonachchi; fibonacci; fibonachi
+квадрат; kvadrat; square
+корень; koren; korni; ildiz
+дерево; derevo; daraxt
+граф; graf; graph
+очередь; ochered; ocheredi; navbat
+стек; stek; stack
+множество; mnozhestvo; mnojestvo; to'plam
+кортеж; kortezh; kortej; tuple
+генератор; generator; generatory
+декоратор; dekorator; decorator
+исключение; isklyuchenie; iskluchenie; exception
+итератор; iterator; iteratory
+библиотека; biblioteka; library; kutubxona
+модуль; modul; module
+класс; klass; class; sinf
+объект; obekt; obyekt; object
+наследование; nasledovanie; nasledovanye
+метод; metod; method; usul

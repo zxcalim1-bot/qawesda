@@ -618,3 +618,19 @@ LESS_EQ	uz	kichik yoki teng
 _STOP	ru	найд; найт; наход; вычисл; дан; =дано; =даны; =дана; требу; нужн; необходим; напиш; программ; порядк; =задача; =задачи; =его; =ее; =их; =который; котор; =этого; =этой; =если; =иначе; =затем; =после; =через; =каждое; =пример; =примеры; =ответ; =ввод; =вводится; =вводятся; =входные; =выходные; =данные; =формат; =будет; =является; =надо; =можно; =нельзя; =также; =только; =одно; =одна; =один; =пусть; =известно; =вывести; =выведите; =выводит
 _STOP	en	=find; =given; =compute; =calculate; =determine; =write; =program; =required; =need; =the; =then; =which; =that; =print; =your; =task; =example; =examples; =input; =output; =following; =contains; =there; =should
 _STOP	uz	=toping; =topilsin; =berilgan; =berilgan; =hisoblang; =yozing; =dastur; =dasturini; =tuzing; =uning; =ularning; =misol; =kiritiladi; =chiqarilsin; =chiqaring; =kiriting; =bo'lgan; =qilib
+# ---------------------------------------------------------------- more objects
+LOCAL	ru	локальн
+LOCAL	en	local; peak
+LOCAL	uz	lokal
+CUMULATIVE	ru	накоплен; нарастающ; префиксн сумм
+CUMULATIVE	en	cumulative; running sum; running total; prefix sums
+CUMULATIVE	uz	jamlangan; to'plangan
+JOSEPHUS	ru	иосиф; считалочк
+JOSEPHUS	en	josephus
+JOSEPHUS	uz	iosif
+POSTFIX	ru	польск запис; постфиксн; обратная польская
+POSTFIX	en	postfix; reverse polish; =rpn
+POSTFIX	uz	postfiks
+MAJORITY	ru	больше половины; большинств
+MAJORITY	en	majority; more than half
+MAJORITY	uz	yarmidan ko'p
