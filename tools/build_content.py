@@ -340,6 +340,22 @@ def task_row(e, runner, order):
     if not examples:
         fail("%s: task without examples" % where)
     tests = io_pairs(e.section("Тесты"), where, require_out=False)
+    gen = [b["code"] for b in (e.section("Генератор") or []) if "code" in b and b["lang"] == "python"]
+    if gen:
+        # The generator prints a JSON list of input strings; expected outputs come from the solutions.
+        status, stdout, exc = run_python(gen[0])
+        if status != "OK":
+            fail("%s: test generator failed: %s" % (where, exc[1] if exc else status))
+        else:
+            try:
+                generated = json.loads(stdout)
+                assert isinstance(generated, list) and all(isinstance(x, str) for x in generated)
+            except Exception:
+                fail("%s: test generator must print a JSON list of strings" % where)
+                generated = []
+            tests += [(g if g.endswith("\n") else g + "\n", None) for g in generated]
+    if sum(len(i) for i, _ in tests) > 24000:
+        fail("%s: hidden tests are too large (%d bytes)" % (where, sum(len(i) for i, _ in tests)))
     hints_blocks = e.section("Подсказки") or []
     hints = []
     for b in hints_blocks:
