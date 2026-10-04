@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Two interlocking rounded "snakes" (blue/yellow) with a podium dot: Python + olympiad. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF3776AB"
+        android:pathData="M53,30c-9,0 -14,3.5 -14,9v6h15v2H34c-6,0 -9,5 -9,12s3,12 9,12h5v-7c0,-5.5 4.5,-10 10,-10h12c4.5,0 8,-3.5 8,-8V39c0,-5.5 -6,-9 -16,-9zM46,35a2.5,2.5 0,1 1,0 5a2.5,2.5 0,1 1,0 -5z" />
+    <path
+        android:fillColor="#FFFFD43B"
+        android:pathData="M55,78c9,0 14,-3.5 14,-9v-6H54v-2h20c6,0 9,-5 9,-12s-3,-12 -9,-12h-5v7c0,5.5 -4.5,10 -10,10H47c-4.5,0 -8,3.5 -8,8v7c0,5.5 6,9 16,9zM62,73a2.5,2.5 0,1 1,0 -5a2.5,2.5 0,1 1,0 5z" />
+</vector>
