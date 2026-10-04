@@ -632,7 +632,7 @@ STDLIB_MODULES = [
     "typing", "unittest", "unittest.mock", "doctest", "pdb", "timeit", "cProfile", "pstats", "trace",
     "traceback", "warnings", "logging", "logging.handlers", "argparse", "getopt", "inspect", "dis", "ast",
     "tokenize", "keyword", "token", "symtable", "importlib", "importlib.util", "importlib.resources",
-    "pkgutil", "site", "sysconfig", "gc", "atexit", "abc", "contextlib", "code", "codeop",
+    "pkgutil", "site", "sysconfig", "gc", "atexit", "abc", "contextlib", "code", "codeop", "tracemalloc",
     "venv", "zipimport", "compileall", "py_compile", "locale", "gettext", "shlex", "signal", "resource",
 ]
 
