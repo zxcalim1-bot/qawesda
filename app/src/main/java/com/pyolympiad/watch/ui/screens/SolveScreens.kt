@@ -3,6 +3,9 @@ package com.pyolympiad.watch.ui.screens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.navigation.NavHostController
 import com.pyolympiad.data.EntrySummary
@@ -178,6 +181,7 @@ fun MethodScreen(vm: AppViewModel, nav: NavHostController, index: Int) {
     val sol = state.solution ?: return LoadingScreen()
     val m: Method = sol.methods.getOrNull(index) ?: return LoadingScreen()
     val check = state.checks.getOrNull(index)
+    var saved by remember(index) { mutableStateOf(false) }
     ScreenList { item ->
         header(item, "Способ ${index + 1}: ${m.title}")
         textItem(item, m.role.titleRu + (m.minPython?.let { " · Python $it+" } ?: ""), PyPalette.muted, center = true, small = true)
@@ -196,6 +200,9 @@ fun MethodScreen(vm: AppViewModel, nav: NavHostController, index: Int) {
         navButton(item, "Запустить", "Python Run", Tone.TERTIARY) {
             vm.openCode(m.code, m.title, stdin = sol.concreteInput ?: sol.samples.firstOrNull()?.input ?: "")
             nav.navigate(R.CODE)
+        }
+        navButton(item, if (saved) "✓ Сохранено в избранном" else "★ Сохранить решение", tone = Tone.OUTLINED, enabled = !saved) {
+            vm.saveSnippet("${sol.title} — ${m.title}", m.code) { saved = true }
         }
         if (index + 1 < sol.methods.size) navButton(item, "Следующий способ") { nav.navigate(R.method(index + 1)) }
     }

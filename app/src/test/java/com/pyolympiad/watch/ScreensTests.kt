@@ -49,14 +49,13 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Renders every main screen on a round Galaxy Watch-sized display (192dp, the 40 mm models)
- * with the real knowledge bases and engine, and saves screenshots to app/build/outputs/roborazzi
- * when run with `./gradlew :app:recordRoborazziDebug`.
+ * Renders every main screen with the real knowledge bases and engine on round watch displays of
+ * different sizes, and saves screenshots to app/build/outputs/roborazzi/<size>/ when run with
+ * `./gradlew :app:recordRoborazziDebug`.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [34], qualifiers = "w192dp-h192dp-small-notlong-round-watch-xhdpi-keyshidden-nonav")
-class ScreensTest {
+abstract class ScreensTestBase(private val size: String) {
 
     @get:Rule
     val rule = createAndroidComposeRule<ComponentActivity>()
@@ -97,7 +96,7 @@ class ScreensTest {
             rule.onAllNodesWithText("Загрузка…").fetchSemanticsNodes().isEmpty()
         }
         rule.waitForIdle()
-        rule.onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
+        rule.onRoot().captureRoboImage("build/outputs/roborazzi/$size/$name.png")
     }
 
     private fun solveAndWait(text: String) {
@@ -176,3 +175,15 @@ class ScreensTest {
         show("21_settings") { SettingsScreen(vm, it) }
     }
 }
+
+/** 192 dp — Galaxy Watch 40 mm class. */
+@Config(sdk = [34], qualifiers = "w192dp-h192dp-small-notlong-round-watch-xhdpi-keyshidden-nonav")
+class ScreensSmallRoundTest : ScreensTestBase("small")
+
+/** 227 dp — large round watches (44–47 mm, Ultra). */
+@Config(sdk = [34], qualifiers = "w227dp-h227dp-small-notlong-round-watch-xhdpi-keyshidden-nonav")
+class ScreensLargeRoundTest : ScreensTestBase("large")
+
+/** Large font setting on a small screen: text must stay readable and inside the circle. */
+@Config(sdk = [34], qualifiers = "w192dp-h192dp-small-notlong-round-watch-xhdpi-keyshidden-nonav", fontScale = 1.3f)
+class ScreensLargeFontTest : ScreensTestBase("large-font")

@@ -252,10 +252,23 @@ fun SearchScreen(vm: AppViewModel, nav: NavHostController) {
 @Composable
 fun FavoritesScreen(vm: AppViewModel, nav: NavHostController) {
     val favs by produceState<List<Favorite>?>(null) { value = withContext(Dispatchers.IO) { vm.store.favorites() } }
+    val snippets by produceState<List<Triple<Long, String, String>>?>(null) { value = withContext(Dispatchers.IO) { vm.store.snippets() } }
     val list = favs ?: return LoadingScreen()
+    val codes = snippets ?: return LoadingScreen()
     ScreenList { item ->
         header(item, "Избранное")
-        if (list.isEmpty()) textItem(item, "Пусто. Нажмите «☆ В избранное» в любой задаче, функции, алгоритме, ошибке или проекте.", PyPalette.muted, center = true)
+        if (list.isEmpty() && codes.isEmpty()) {
+            textItem(item, "Пусто. Нажмите «☆ В избранное» в задаче, функции, методе, алгоритме, библиотеке, ошибке или статье, а «★ Сохранить решение» — под решением.", PyPalette.muted, center = true)
+        }
+        if (codes.isNotEmpty()) {
+            header(item, "Сохранённые решения и код")
+            for ((sid, title, body) in codes) {
+                navButton(item, title, body.lineSequence().firstOrNull { it.isNotBlank() }?.trim(), Tone.TERTIARY, key = "s$sid") {
+                    vm.openCode(body, title, snippetId = sid)
+                    nav.navigate(R.CODE)
+                }
+            }
+        }
         for ((kind, items) in list.groupBy { it.kind }) {
             header(item, kindTitle(kind))
             for (f in items) navButton(item, f.title, key = f.id) { nav.navigate(R.entry(f.id)) }

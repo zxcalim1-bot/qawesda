@@ -141,7 +141,7 @@ fun TaskSolutionScreen(vm: AppViewModel, nav: NavHostController, id: String, ind
     var progress by remember { mutableStateOf<TaskProgress?>(null) }
     var confirmed by remember { mutableStateOf(false) }
     LaunchedEffect(id) { progress = withContext(Dispatchers.IO) { vm.store.taskProgress(id) } }
-    val scope = rememberCoroutineScope()
+    var saved by remember(id, index) { mutableStateOf(false) }
     val locked = settings.olympiadMode && !confirmed && (progress?.hintsUsed ?: 0) < t.hints.size && progress?.status != TaskStatus.SOLVED
     val s = t.solutions.getOrNull(index) ?: return LoadingScreen()
     ScreenList { item ->
@@ -161,8 +161,10 @@ fun TaskSolutionScreen(vm: AppViewModel, nav: NavHostController, id: String, ind
             vm.openCode(s.code, e.title, taskId = id, stdin = t.tests.firstOrNull()?.input ?: "")
             nav.navigate(R.CODE)
         }
+        navButton(item, if (saved) "✓ Сохранено в избранном" else "★ Сохранить решение", tone = Tone.OUTLINED, enabled = !saved) {
+            vm.saveSnippet("${e.title} — ${s.title}", s.code) { saved = true }
+        }
         if (index + 1 < t.solutions.size) navButton(item, "Другое решение") { nav.navigate(R.taskSolution(id, index + 1)) }
-        scope.hashCode()
     }
 }
 

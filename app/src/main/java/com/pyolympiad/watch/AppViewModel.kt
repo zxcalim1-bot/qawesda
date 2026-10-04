@@ -58,6 +58,8 @@ data class CodeState(
     val analysis: AnalysisReport? = null,
     val syntax: SyntaxCheck? = null,
     val judge: JudgeResult? = null,
+    /** Id of the saved snippet this code was opened from (or saved as), if any. */
+    val snippetId: Long? = null,
 ) {
     val text: String get() = lines.joinToString("\n")
 }
@@ -225,8 +227,32 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _code = MutableStateFlow(CodeState())
     val code: StateFlow<CodeState> = _code.asStateFlow()
 
-    fun openCode(text: String, title: String = "Мой код", taskId: String? = null, stdin: String = "") {
-        _code.value = CodeState(lines = text.trimEnd('\n').split('\n'), title = title, taskId = taskId, stdin = stdin)
+    fun openCode(text: String, title: String = "Мой код", taskId: String? = null, stdin: String = "", snippetId: Long? = null) {
+        _code.value = CodeState(lines = text.trimEnd('\n').split('\n'), title = title, taskId = taskId, stdin = stdin, snippetId = snippetId)
+    }
+
+    /** Saves a solution or any code to «Избранное → Сохранённые решения и код». */
+    fun saveSnippet(title: String, code: String, onSaved: () -> Unit = {}) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { store.saveSnippet(null, title, code) }
+            onSaved()
+        }
+    }
+
+    fun saveCurrentCode() {
+        val s = _code.value
+        viewModelScope.launch {
+            val id = withContext(Dispatchers.IO) { store.saveSnippet(s.snippetId, s.title, s.text) }
+            _code.update { it.copy(snippetId = id) }
+        }
+    }
+
+    fun deleteCurrentSnippet() {
+        val id = _code.value.snippetId ?: return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { store.deleteSnippet(id) }
+            _code.update { it.copy(snippetId = null) }
+        }
     }
 
     fun editCode(f: (MutableList<String>) -> Unit) {

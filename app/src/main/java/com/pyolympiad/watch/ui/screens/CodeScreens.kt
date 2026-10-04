@@ -140,6 +140,8 @@ fun CodeEditorScreen(vm: AppViewModel, nav: NavHostController) {
         navButton(item, "▶ Запустить", tone = Tone.TERTIARY) { nav.navigate(R.CODE_RUN) }
         navButton(item, "Анализ кода", "ошибки, сложность, стиль") { nav.navigate(R.CODE_ANALYSIS) }
         code.taskId?.let { id -> navButton(item, "Проверить на тестах задачи", tone = Tone.SECONDARY) { nav.navigate(R.judge(id)) } }
+        navButton(item, if (code.snippetId != null) "Сохранить изменения" else "★ Сохранить код", "Избранное → сохранённый код", Tone.OUTLINED) { vm.saveCurrentCode() }
+        if (code.snippetId != null) navButton(item, "Удалить из сохранённых", tone = Tone.OUTLINED) { vm.deleteCurrentSnippet() }
         navButton(item, "Редактировать текстом", tone = Tone.OUTLINED) { nav.navigate(R.CODE_TEXT) }
         navButton(item, "Очистить", tone = Tone.OUTLINED) { vm.editCode { l -> l.clear() }; selected = null }
     }
