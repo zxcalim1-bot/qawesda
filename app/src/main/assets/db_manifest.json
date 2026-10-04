@@ -1,0 +1,57 @@
+{
+ "schema": 1,
+ "python": "3.11",
+ "databases": [
+  {
+   "domain": "python",
+   "path": "python/python.db",
+   "entries": 495,
+   "size": 1449984,
+   "hash": "938bc4b90a46e1b3056901beccda072e01304981"
+  },
+  {
+   "domain": "libraries",
+   "path": "libraries/libraries.db",
+   "entries": 6695,
+   "size": 7622656,
+   "hash": "40c70ea9cdeeb1388f47f781c65ab3722e8257ef"
+  },
+  {
+   "domain": "algorithms",
+   "path": "algorithms/algorithms.db",
+   "entries": 1,
+   "size": 57344,
+   "hash": "69c4a8285bbae7fdecf5eda7a399e0e319801ade"
+  },
+  {
+   "domain": "tasks",
+   "path": "tasks/tasks.db",
+   "entries": 1,
+   "size": 57344,
+   "hash": "8b7cb64b73fe25347963499fb0b92e660f111c86"
+  },
+  {
+   "domain": "errors",
+   "path": "errors/errors.db",
+   "entries": 1,
+   "size": 57344,
+   "hash": "ed41810b1c486315a2846c395749b91327a13882"
+  },
+  {
+   "domain": "tests",
+   "path": "tests/tests.db",
+   "entries": 4,
+   "size": 57344,
+   "hash": "530205bd9867b48e8e1a6d07771e97e1d01e4896"
+  },
+  {
+   "domain": "github",
+   "path": "github/github.db",
+   "entries": 1,
+   "size": 57344,
+   "hash": "1c0264419f447ebfe024d29367cb4f42e044714f"
+  }
+ ],
+ "external_libraries": [],
+ "version": "371c892475b2b1ef"
+}

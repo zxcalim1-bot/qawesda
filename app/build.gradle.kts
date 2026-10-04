@@ -47,12 +47,6 @@ android {
         buildConfig = true
     }
 
-    androidResources {
-        // The knowledge databases are already compact; storing them uncompressed lets
-        // the installer stream-copy them quickly. Keep compression for everything else.
-        noCompress += listOf("db")
-    }
-
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -108,4 +102,5 @@ dependencies {
     testImplementation(libs.roborazzi.compose)
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.core)
 }
