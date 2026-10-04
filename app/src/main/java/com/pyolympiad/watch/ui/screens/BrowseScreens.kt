@@ -106,8 +106,16 @@ fun EntryScreen(vm: AppViewModel, nav: NavHostController, id: String) {
             else navButton(item, "Показать ответ", tone = Tone.OUTLINED) { showAnswer = true }
         }
         sectionsItems(item, e.sections)
-        e.fields["url"]?.let { infoCard(item, "Официальный репозиторий", it + "\n(откройте на телефоне или компьютере — часам интернет не нужен)") }
-        e.fields["license"]?.let { textItem(item, "Лицензия: $it", PyPalette.muted, small = true) }
+        e.fields["url"]?.let { url ->
+            val label = if ("github.com/" in url) "Официальный репозиторий" else "Официальный сайт"
+            infoCard(item, label, url + "\n(откройте на телефоне или компьютере — часам интернет не нужен)")
+        }
+        e.fields["install"]?.let { codeItem(item, it, "Установка на компьютере:") }
+        listOfNotNull(
+            e.fields["lang"]?.let { "Язык: $it" },
+            e.fields["version"]?.let { "Версия: $it" },
+            e.fields["license"]?.let { "Лицензия: $it" },
+        ).takeIf { it.isNotEmpty() }?.let { textItem(item, it.joinToString("\n"), PyPalette.muted, small = true) }
         if (e.related.isNotEmpty()) {
             header(item, "Связанные знания")
             for (r in e.related) navButton(item, r.title, kindTitle(r.kind), Tone.OUTLINED, key = "rel" + r.id) { nav.navigate(R.entry(r.id)) }
