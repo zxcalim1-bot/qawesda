@@ -3,11 +3,12 @@ package com.pyolympiad.watch.runtime
 import android.content.Context
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import java.util.concurrent.Executors
 import org.json.JSONObject
 
 data class RunResult(
@@ -48,6 +49,15 @@ class PythonRuntime(private val context: Context) {
 
     private val mutex = Mutex()
 
+    /**
+     * User programs run on one dedicated thread with a large native stack: CPython 3.11 keeps
+     * Python frames on the C stack, and the default ~1 MB thread stack would overflow (and kill
+     * the app) on deep but legitimate recursion before RecursionError could be raised.
+     */
+    private val pythonDispatcher = Executors.newSingleThreadExecutor { r ->
+        Thread(null, r, "python-runner", PYTHON_STACK_BYTES).apply { isDaemon = true }
+    }.asCoroutineDispatcher()
+
     @Volatile
     var startError: String? = null
         private set
@@ -64,12 +74,12 @@ class PythonRuntime(private val context: Context) {
         }
     }
 
-    suspend fun warmUp(): Boolean = withContext(Dispatchers.Default) {
+    suspend fun warmUp(): Boolean = withContext(pythonDispatcher) {
         runCatching { module(); true }.getOrDefault(false)
     }
 
     private suspend fun call(fn: String, payload: JSONObject): JSONObject = mutex.withLock {
-        withContext(Dispatchers.Default) {
+        withContext(pythonDispatcher) {
             JSONObject(module().callAttr(fn, payload.toString()).toString())
         }
     }
@@ -128,6 +138,8 @@ class PythonRuntime(private val context: Context) {
     )
 
     companion object {
+        private const val PYTHON_STACK_BYTES = 64L * 1024 * 1024
+
         /** Whitespace-insensitive output comparison with float tolerance (same as the judge). */
         fun sameOutput(a: String, b: String): Boolean {
             val x = a.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
