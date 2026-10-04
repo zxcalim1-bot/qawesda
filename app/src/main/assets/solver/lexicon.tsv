@@ -1,0 +1,620 @@
+# Offline Python Olympiad Assistant — concept lexicon used by the task solver.
+#
+# Format: CONCEPT <TAB> lang <TAB> form; form; ...
+#   lang  : ru | en | uz   (Russian forms also match Russian typed in Latin translit:
+#           "chetnyh cifr" -> "четных цифр"; spelling variants collapse via skeleton forms)
+#   form  : a stem matched as a word prefix ("цифр" matches "цифры", "цифрами").
+#           "=word" matches the whole word only.
+#           Several words separated by spaces form a phrase (each word is a stem).
+# Longer matches win over shorter ones; phrases win over single words.
+#
+# ---------------------------------------------------------------- objects
+NUMBER	ru	числ; =чисел; =число
+NUMBER	en	number; =num; =nums
+NUMBER	uz	=son; =sonni; =sonning; =songa; =sondan; =sonda; sonlar; =raqamli son
+INTEGER	ru	цел; =целое; =целые
+INTEGER	en	integer; =int
+INTEGER	uz	butun
+NATURAL	ru	натурал
+NATURAL	en	natural
+NATURAL	uz	natural
+DIGIT	ru	цифр
+DIGIT	en	digit
+DIGIT	uz	raqam
+LIST	ru	список; списк; массив; последовательност; набор; =ряд; =ряда
+LIST	en	list; array; sequence; =arr
+LIST	uz	ro'yxat; massiv; ketma-ketlik; ketma ketlik
+ELEMENT	ru	элемент; =член; =члены; =членов
+ELEMENT	en	element; item; =elements; =items
+ELEMENT	uz	element; =hadlari; hadlar
+STRING	ru	строк; текст; предложен
+STRING	en	string; text; sentence; =str
+STRING	uz	satr; matn
+WORD	ru	слов
+WORD	en	word
+WORD	uz	so'z
+CHAR	ru	символ
+CHAR	en	character; =char; =chars; symbol
+CHAR	uz	belgi
+LETTER	ru	букв
+LETTER	en	letter
+LETTER	uz	harf
+VOWEL	ru	гласн
+VOWEL	en	vowel
+VOWEL	uz	unli
+CONSONANT	ru	согласн
+CONSONANT	en	consonant
+CONSONANT	uz	undosh
+UPPER	ru	заглавн; прописн; больш букв; верхн регистр
+UPPER	en	uppercase; upper case; capital
+UPPER	uz	katta harf; bosh harf
+LOWER	ru	строчн; маленьк букв; нижн регистр
+LOWER	en	lowercase; lower case; small letter
+LOWER	uz	kichik harf
+SPACE	ru	пробел
+SPACE	en	space; whitespace
+SPACE	uz	probel; bo'sh joy
+MATRIX	ru	матриц; двумерн; таблиц
+MATRIX	en	matrix; matrices; =2d; =grid
+MATRIX	uz	matritsa; jadval
+ROW	ru	=строки матрицы; =строку матрицы
+ROW	en	row
+ROW	uz	qator
+COLUMN	ru	столб
+COLUMN	en	column
+COLUMN	uz	ustun
+DIAGONAL	ru	диагонал
+DIAGONAL	en	diagonal
+DIAGONAL	uz	diagonal
+MAIN	ru	главн
+MAIN	en	main; =primary
+MAIN	uz	bosh
+SECONDARY	ru	побочн
+SECONDARY	en	secondary; anti-diagonal; antidiagonal
+SECONDARY	uz	yordamchi
+DIVISOR	ru	делител
+DIVISOR	en	divisor; =factor; =factors
+DIVISOR	uz	bo'luvchi
+PROPER	ru	собственн
+PROPER	en	proper
+PROPER	uz	xos
+PRIME	ru	прост
+PRIME	en	prime
+PRIME	uz	=tub
+RANGE	ru	диапазон; промежут; отрезк; интервал
+RANGE	en	range; interval; between
+RANGE	uz	oraliq; oralig'
+PAIR	ru	=пара; =пары; =пар; =парой; =пару
+PAIR	en	pair
+PAIR	uz	juftlik; juftliklar
+GRAPH	ru	граф
+GRAPH	en	graph
+GRAPH	uz	graf
+VERTEX	ru	вершин; узел; узл
+VERTEX	en	vertex; vertices; node
+VERTEX	uz	tugun; uchlar
+EDGE	ru	ребр; ребер; дуг
+EDGE	en	edge
+EDGE	uz	qirra
+TREE	ru	дерев
+TREE	en	tree
+TREE	uz	daraxt
+PATH	ru	=путь; =пути; =путей; =путём; =путем; маршрут
+PATH	en	path; route
+PATH	uz	yo'l; marshrut
+SHORTEST	ru	кратчайш
+SHORTEST	en	shortest
+SHORTEST	uz	eng qisqa; qisqa
+MAZE	ru	лабиринт; клетчат; =поле; =поля; сетк
+MAZE	en	maze; labyrinth
+MAZE	uz	labirint
+ISLAND	ru	остров
+ISLAND	en	island
+ISLAND	uz	orol
+COIN	ru	монет; купюр
+COIN	en	coin
+COIN	uz	tanga
+STAIRS	ru	лестниц; ступен
+STAIRS	en	stair; staircase; =steps
+STAIRS	uz	zina; pog'ona
+KNAPSACK	ru	рюкзак
+KNAPSACK	en	knapsack; backpack
+KNAPSACK	uz	ryukzak
+WEIGHT	ru	=вес; =веса; =весом; взвешен
+WEIGHT	en	weight
+WEIGHT	uz	og'irlik; vazn
+VALUE	ru	стоимост; ценност; =цена; =цены
+VALUE	en	=value; =values; cost; price
+VALUE	uz	narx; qiymat
+SUBSEQUENCE	ru	подпоследовател
+SUBSEQUENCE	en	subsequence
+SUBSEQUENCE	uz	qism ketma
+SUBSTRING	ru	подстрок
+SUBSTRING	en	substring
+SUBSTRING	uz	qism satr
+SUBARRAY	ru	подмассив; подотрез
+SUBARRAY	en	subarray; segment
+SUBARRAY	uz	qism massiv
+CONSECUTIVE	ru	подряд; соседн; последовательно иду
+CONSECUTIVE	en	consecutive; adjacent; contiguous
+CONSECUTIVE	uz	ketma-ket; qo'shni
+PREFIX	ru	префикс
+PREFIX	en	prefix
+PREFIX	uz	prefiks
+COMMON	ru	общ
+COMMON	en	common
+COMMON	uz	umumiy
+INCREASING	ru	возрастающ
+INCREASING	en	increasing
+INCREASING	uz	o'suvchi
+LONGEST	ru	длинн; самая длинн; самый длинн; самое длинн; наибольш длин
+LONGEST	en	longest
+LONGEST	uz	eng uzun; uzun
+SHORTEST_WORD	ru	самое коротк; самый коротк; самая коротк; кратчайш слов
+SHORTEST_WORD	en	shortest word
+SHORTEST_WORD	uz	eng qisqa so'z
+LENGTH	ru	длин
+LENGTH	en	length; =len
+LENGTH	uz	uzunlig
+BRACKETS	ru	скобк; скобоч; скобочн
+BRACKETS	en	bracket; parenthes
+BRACKETS	uz	qavs
+BALANCED	ru	правильн; сбалансир; корректн
+BALANCED	en	balanced; =valid
+BALANCED	uz	to'g'ri; muvozanat
+YEAR	ru	=год; =года; =году; =годом; =годы; =лет
+YEAR	en	year
+YEAR	uz	yil
+LEAP	ru	високос
+LEAP	en	leap
+LEAP	uz	kabisa
+TRIANGLE	ru	треугольн
+TRIANGLE	en	triangle
+TRIANGLE	uz	uchburchak
+RIGHT_ANGLE	ru	прямоугольн
+RIGHT_ANGLE	en	right; right-angled
+RIGHT_ANGLE	uz	to'g'ri burchakli
+RECTANGLE	ru	прямоугольник
+RECTANGLE	en	rectangle
+RECTANGLE	uz	to'rtburchak
+SIDE	ru	сторон
+SIDE	en	side
+SIDE	uz	tomon
+AREA	ru	площад
+AREA	en	area
+AREA	uz	yuza
+PERIMETER	ru	периметр
+PERIMETER	en	perimeter
+PERIMETER	uz	perimetr
+CIRCLE	ru	окружност; =круг; =круга; =кругу
+CIRCLE	en	circle
+CIRCLE	uz	aylana; doira
+RADIUS	ru	радиус
+RADIUS	en	radius
+RADIUS	uz	radius
+POINT	ru	точк
+POINT	en	point
+POINT	uz	nuqta
+DISTANCE	ru	расстоян
+DISTANCE	en	distance
+DISTANCE	uz	masofa
+EQUATION	ru	уравнен
+EQUATION	en	equation
+EQUATION	uz	tenglama
+QUADRATIC	ru	квадратн уравн; квадратное уравнение
+QUADRATIC	en	quadratic
+QUADRATIC	uz	kvadrat tenglama
+ROOT	ru	=корень; =корни; =корня; =корней; =корнем
+ROOT	en	root
+ROOT	uz	ildiz
+SQRT	ru	квадратн корен; квадратный корень
+SQRT	en	square root; =sqrt
+SQRT	uz	kvadrat ildiz
+SQUARE	ru	квадрат
+SQUARE	en	square; squared
+SQUARE	uz	kvadrat
+CUBE	ru	=куб; =кубы; =кубов; =кубу; =кубам; =кубом
+CUBE	en	cube; cubed
+CUBE	uz	=kub; kublar
+POWER	ru	степен
+POWER	en	power; exponent; =pow
+POWER	uz	daraja
+MOD	ru	по модул; остат
+MOD	en	modulo; =mod; remainder
+MOD	uz	qoldiq
+ABS	ru	модул; абсолютн
+ABS	en	absolute
+ABS	uz	modul
+SECONDS	ru	секунд
+SECONDS	en	seconds
+SECONDS	uz	soniya; sekund
+MINUTES	ru	минут
+MINUTES	en	minute
+MINUTES	uz	daqiqa; minut
+HOURS	ru	=час; =часы; =часов; =часа
+HOURS	en	hour
+HOURS	uz	soat
+WEEKDAY	ru	день недел; дня недел
+WEEKDAY	en	day of the week; weekday; day of week
+WEEKDAY	uz	hafta kuni
+DATE	ru	=дата; =даты; =дату; =датами
+DATE	en	date
+DATE	uz	sana
+DAYS	ru	=дней; =дня; =день; =сутки
+DAYS	en	=days; =day
+DAYS	uz	kun
+CELSIUS	ru	цельси
+CELSIUS	en	celsius
+CELSIUS	uz	selsiy
+FAHRENHEIT	ru	фаренгейт
+FAHRENHEIT	en	fahrenheit
+FAHRENHEIT	uz	farengeyt
+BINARY	ru	двоичн; бинарн
+BINARY	en	binary
+BINARY	uz	ikkilik
+OCTAL	ru	восьмеричн
+OCTAL	en	octal
+OCTAL	uz	sakkizlik
+HEX	ru	шестнадцатеричн
+HEX	en	hexadecimal; =hex
+HEX	uz	o'n oltilik
+BASE	ru	систем счислен; счислен; основани
+BASE	en	base; numeral system; radix
+BASE	uz	sanoq sistema; sanoq tizim; sanoq
+DECIMAL	ru	десятичн
+DECIMAL	en	decimal
+DECIMAL	uz	o'nlik
+CONVERT	ru	перевед; перевест; перевод; преобраз; конверт
+CONVERT	en	convert
+CONVERT	uz	o'tkaz
+TICKET	ru	билет; счастлив
+TICKET	en	ticket; lucky
+TICKET	uz	chipta; baxtli
+PERFECT	ru	совершенн
+PERFECT	en	perfect
+PERFECT	uz	mukammal
+ARMSTRONG	ru	армстронг; нарцисс
+ARMSTRONG	en	armstrong; narcissistic
+ARMSTRONG	uz	armstrong
+COLLATZ	ru	коллатц; сиракуз
+COLLATZ	en	collatz; 3n+1
+COLLATZ	uz	kollats
+HANOI	ru	ханой; ханойск
+HANOI	en	hanoi
+HANOI	uz	xanoy
+QUEEN	ru	ферз
+QUEEN	en	queen
+QUEEN	uz	farzin
+PERMUTATION	ru	перестановк
+PERMUTATION	en	permutation
+PERMUTATION	uz	o'rin almashtirish; o'rinlashtirish
+COMBINATION	ru	сочетан; комбинац; биномиальн
+COMBINATION	en	combination; =choose; binomial
+COMBINATION	uz	guruhlash; kombinatsiya
+SUBSET	ru	подмножеств
+SUBSET	en	subset
+SUBSET	uz	qism to'plam
+ANAGRAM	ru	анаграм
+ANAGRAM	en	anagram
+ANAGRAM	uz	anagramma
+PALINDROME	ru	палиндром; перевертыш
+PALINDROME	en	palindrom
+PALINDROME	uz	palindrom
+CIPHER	ru	цезар; шифр; зашифр
+CIPHER	en	caesar; cipher; encrypt
+CIPHER	uz	shifr; sezar
+COMPRESS	ru	сжат; сжим; =rle
+COMPRESS	en	compress; run-length; run length; =rle
+COMPRESS	uz	siqish
+MOST_FREQUENT	ru	чаще всего; самый част; самая част; самое част; наиболее част
+MOST_FREQUENT	en	most frequent; most common; occurs most
+MOST_FREQUENT	uz	eng ko'p uchraydigan; ko'p uchraydigan; eng ko'p takrorlangan
+OCCURRENCE	ru	вхожден; встреча; =раз
+OCCURRENCE	en	occurrence; occur; appears; =times
+OCCURRENCE	uz	uchray; marta
+REPLACE	ru	замен
+REPLACE	en	replace; substitute
+REPLACE	uz	almashtir
+REMOVE	ru	удал; убер; убрат; исключ; вычеркн
+REMOVE	en	remove; delete; strip
+REMOVE	uz	o'chir; olib tashla
+DUPLICATE	ru	повтор; дубл; одинаков
+DUPLICATE	en	duplicate; repeat; repeated
+DUPLICATE	uz	takror
+UNIQUE	ru	различн; уникальн; =разных; =разные; =разными; неповторя; не повторя
+UNIQUE	en	distinct; unique; different
+UNIQUE	uz	har xil; turli; takrorlanmas; takrorlanmaydigan
+MERGE	ru	слия; слит; объедин
+MERGE	en	merge
+MERGE	uz	birlashtir
+ROTATE	ru	сдвиг; сдвин; циклическ; поверн; поворот
+ROTATE	en	rotate; rotation; shift; cyclic
+ROTATE	uz	siljit; surish; aylantir
+REVERSE	ru	обратн; развернут; разверн; переверн; наоборот; задом наперед; реверс
+REVERSE	en	reverse; reversed; backwards
+REVERSE	uz	teskari
+SORT	ru	сортир; упорядоч; отсортир; сортировк
+SORT	en	sort; =sorted; =order
+SORT	uz	saralash; saralang; tartibla
+ASC	ru	возрастан; неубыва
+ASC	en	ascending; non-decreasing; increasing order
+ASC	uz	o'sish
+DESC	ru	убыван; невозраст
+DESC	en	descending; decreasing; non-increasing
+DESC	uz	kamayish
+SEARCH	ru	поиск; =ищет; =искать
+SEARCH	en	search
+SEARCH	uz	qidir
+BSEARCH	ru	двоичн поиск; бинарн поиск
+BSEARCH	en	binary search
+BSEARCH	uz	ikkilik qidiruv; binar qidiruv
+POSITION	ru	индекс; позиц; =номер; =номера; =место
+POSITION	en	index; position
+POSITION	uz	indeks; o'rni; o'rin
+EXISTS	ru	есть ли; существ; =найдется; =найдутся; хотя бы од; =имеется; =имеются
+EXISTS	en	exist; =any; at least one; contains
+EXISTS	uz	bormi; mavjud
+ALL	ru	все ли; =всех ли; кажд из
+ALL	en	whether all; =are =all; =all of
+ALL	uz	barcha; hammasi; barchasi
+EACH	ru	кажд
+EACH	en	each; every
+EACH	uz	har bir; har
+CHECK	ru	провер; =является; =являются; =ли
+CHECK	en	check; whether; determine if; =is it; =is the
+CHECK	uz	tekshir; ekanligini; aniqlang
+PRINT	ru	вывед; вывест; вывод; напечат; перечисл
+PRINT	en	print; output; =display
+PRINT	uz	chiqar
+SUM	ru	сумм; сложи; сложени
+SUM	en	sum; total; =add
+SUM	uz	yig'indi; qo'sh
+PRODUCT	ru	произведен; перемнож
+PRODUCT	en	product; multiply; multiplication
+PRODUCT	uz	ko'paytma; ko'paytir
+COUNT	ru	количеств; скольк; ~посчит; ~подсчит; =кол-во
+COUNT	en	count; how many; number of
+COUNT	uz	nechta; =soni; =sonini; miqdor
+MAX	ru	максим; наибольш; самый больш; самое больш; самая больш; самого больш
+MAX	en	max; maximum; largest; biggest; greatest; highest
+MAX	uz	eng katta; maksimal; eng kattasi
+MIN	ru	миним; наименьш; самый маленьк; самое маленьк; самая маленьк; самый меньш
+MIN	en	min; minimum; smallest; least; lowest
+MIN	uz	eng kichik; minimal; eng kichigi
+AVERAGE	ru	средн; среднее арифметическ
+AVERAGE	en	average; =mean; =avg
+AVERAGE	uz	o'rtacha; o'rta arifmetik
+DIFF	ru	разност; разниц
+DIFF	en	difference
+DIFF	uz	ayirma; farq
+QUOTIENT	ru	частн; делени
+QUOTIENT	en	quotient; division; =divide
+QUOTIENT	uz	bo'linma; bo'lish
+FIRST	ru	перв
+FIRST	en	first
+FIRST	uz	birinchi
+LAST	ru	последн
+LAST	en	last
+LAST	uz	oxirgi
+SECOND	ru	втор
+SECOND	en	=second
+SECOND	uz	ikkinchi
+KTH	ru	k-; k-й; k-ый; =k-тый
+KTH	en	kth; k-th
+KTH	uz	k-chi
+EVEN	ru	четн
+EVEN	en	even
+EVEN	uz	juft
+ODD	ru	нечетн
+ODD	en	odd
+ODD	uz	=toq
+POSITIVE	ru	положительн
+POSITIVE	en	positive
+POSITIVE	uz	musbat
+NEGATIVE	ru	отрицательн
+NEGATIVE	en	negative
+NEGATIVE	uz	manfiy
+ZERO	ru	=нуль; =ноль; нулев; =нули; =нулей; =нулями; =нулю; =нуля; =ноля
+ZERO	en	zero; zeros; zeroes
+ZERO	uz	=nol; nollar
+DIVISIBLE	ru	делящ; =делится; =делятся; кратн; делим
+DIVISIBLE	en	divisible; multiple
+DIVISIBLE	uz	bo'linadigan; bo'linuvchi; karrali; bo'linsa
+NOT_DIVISIBLE	ru	не делящ; не делят; не делит; не кратн; неделящ; некратн
+NOT_DIVISIBLE	en	not divisible; non-divisible
+NOT_DIVISIBLE	uz	bo'linmaydigan; bo'linmas
+GREATER	ru	=больше; =больших; =большие; =большим; превосход; превыша; =свыше; =более
+GREATER	en	greater; more than; larger than; bigger than; exceed; above
+GREATER	uz	=katta; kattalar; ortiq; oshadigan; dan katta
+LESS	ru	=меньше; =меньших; =меньшие; =меньшим; =менее
+LESS	en	less; smaller than; fewer; below
+LESS	uz	=kichik; kichiklar; dan kichik
+EQUAL	ru	равн
+EQUAL	en	equal
+EQUAL	uz	teng
+NOT	ru	=не; =ни
+NOT	en	=not; =non
+NOT	uz	=emas
+PERFECT_SQUARE	ru	полн квадрат; точн квадрат
+PERFECT_SQUARE	en	perfect square
+PERFECT_SQUARE	uz	to'liq kvadrat
+TWO_DIGIT	ru	двузначн
+TWO_DIGIT	en	two-digit; two digit
+TWO_DIGIT	uz	ikki xonali
+THREE_DIGIT	ru	трехзначн
+THREE_DIGIT	en	three-digit; three digit
+THREE_DIGIT	uz	uch xonali
+FOUR_DIGIT	ru	четырехзначн
+FOUR_DIGIT	en	four-digit; four digit
+FOUR_DIGIT	uz	to'rt xonali
+FIVE_DIGIT	ru	пятизначн
+FIVE_DIGIT	en	five-digit; five digit
+FIVE_DIGIT	uz	besh xonali
+SIX_DIGIT	ru	шестизначн
+SIX_DIGIT	en	six-digit; six digit
+SIX_DIGIT	uz	olti xonali
+TWO	ru	=два; =две; =двух; =двум; =двумя
+TWO	en	=two; =both
+TWO	uz	=ikki; =ikkita; =ikkala
+THREE	ru	=три; =трех; =трем; =тремя
+THREE	en	=three
+THREE	uz	=uch; =uchta
+GCD	ru	=нод; наибольш общ делител; наибольший общий делитель
+GCD	en	=gcd; greatest common divisor; highest common factor; =hcf
+GCD	uz	=ekub; eng katta umumiy bo'luvchi
+LCM	ru	=нок; наименьш общ кратн; наименьшее общее кратное
+LCM	en	=lcm; least common multiple; lowest common multiple
+LCM	uz	=ekuk; eng kichik umumiy karrali
+FACTORIAL	ru	факториал
+FACTORIAL	en	factorial
+FACTORIAL	uz	faktorial
+FIBONACCI	ru	фибоначч
+FIBONACCI	en	fibonacci; fibonaci
+FIBONACCI	uz	fibonachchi; fibonacci
+FACTORIZE	ru	разлож; множител; факторизац
+FACTORIZE	en	factorization; factorize; factorise; prime factors
+FACTORIZE	uz	ko'paytuvchi; tub ko'paytuvchi
+SIEVE	ru	решет; эратосфен
+SIEVE	en	sieve; eratosthenes
+SIEVE	uz	elak; eratosfen
+TOTIENT	ru	эйлер
+TOTIENT	en	totient; euler
+TOTIENT	uz	eyler
+BITS	ru	=бит; =битов; =биты; =бита; единичн бит; битов
+BITS	en	=bit; =bits; set bits
+BITS	uz	=bit; bitlar
+DIGITAL_ROOT	ru	цифров корен; цифровой корень
+DIGITAL_ROOT	en	digital root
+DIGITAL_ROOT	uz	raqamli ildiz
+WAYS	ru	способ; вариант
+WAYS	en	ways; =way
+WAYS	uz	usul
+SWAP	ru	обмен; помен мест; поменять местами; поменяйте местами
+SWAP	en	swap; exchange
+SWAP	uz	o'rnini almashtir
+SIGN	ru	=знак
+SIGN	en	=sign
+SIGN	uz	ishora
+STACK	ru	=стек; =стека; =стеком
+STACK	en	stack
+STACK	uz	stek
+QUEUE	ru	очеред
+QUEUE	en	queue
+QUEUE	uz	navbat
+NEXT_GREATER	ru	следующ больш; ближайш больш
+NEXT_GREATER	en	next greater
+NEXT_GREATER	uz	keyingi katta
+INVERSION	ru	инверси
+INVERSION	en	inversion
+INVERSION	uz	inversiya
+MISSING	ru	пропущен; недоста; отсутству
+MISSING	en	missing
+MISSING	uz	tushib qolgan; yetishmayotgan
+INTERVALS	ru	заявк; лекци; собрани; встреч
+INTERVALS	en	meeting; activity; activities; intervals
+INTERVALS	uz	uchrashuv
+OVERLAP	ru	пересека; непересека; наклад
+OVERLAP	en	overlap; non-overlapping; intersect
+OVERLAP	uz	kesish
+EDIT_DISTANCE	ru	редакцион; левенштейн
+EDIT_DISTANCE	en	edit distance; levenshtein
+EDIT_DISTANCE	uz	levenshteyn
+COMPONENTS	ru	компонент; связност
+COMPONENTS	en	component; connected
+COMPONENTS	uz	komponent; bog'langan
+CYCLE	ru	=цикл; =цикла; =циклы; =циклов
+CYCLE	en	cycle
+CYCLE	uz	sikl; tsikl
+BIPARTITE	ru	двудольн
+BIPARTITE	en	bipartite
+BIPARTITE	uz	ikki bo'lakli
+TOPOLOGICAL	ru	топологич
+TOPOLOGICAL	en	topological
+TOPOLOGICAL	uz	topologik
+MST	ru	остовн; =остов
+MST	en	spanning tree; =mst
+MST	uz	karkas daraxt
+DIJKSTRA	ru	дейкстр
+DIJKSTRA	en	dijkstra
+DIJKSTRA	uz	deykstra
+BFS	ru	обход в ширин; в ширину; =bfs
+BFS	en	=bfs; breadth-first; breadth first
+BFS	uz	kenglik bo'yicha
+DFS	ru	обход в глубин; в глубину; =dfs
+DFS	en	=dfs; depth-first; depth first
+DFS	uz	chuqurlik bo'yicha
+DSU	ru	систем непересекающ; =dsu
+DSU	en	union-find; union find; disjoint set; =dsu
+DSU	uz	=dsu
+DIAMETER	ru	диаметр
+DIAMETER	en	diameter
+DIAMETER	uz	diametr
+TRANSPOSE	ru	транспонир
+TRANSPOSE	en	transpose
+TRANSPOSE	uz	transpon
+SPIRAL	ru	спирал; улитк
+SPIRAL	en	spiral
+SPIRAL	uz	spiral
+SYMMETRIC	ru	симметричн
+SYMMETRIC	en	symmetric
+SYMMETRIC	uz	simmetrik
+PANGRAM	ru	панграм
+PANGRAM	en	pangram
+PANGRAM	uz	pangramma
+WITHOUT	ru	=без
+WITHOUT	en	without
+WITHOUT	uz	siz
+QUERY	ru	запрос
+QUERY	en	query; queries
+QUERY	uz	so'rov
+WINDOW	ru	=окно; =окна; окон
+WINDOW	en	window
+WINDOW	uz	oyna
+PYTHAGOREAN	ru	пифагор
+PYTHAGOREAN	en	pythagorean
+PYTHAGOREAN	uz	pifagor
+MULT_TABLE	ru	таблиц умножен; таблица умножения
+MULT_TABLE	en	multiplication table; times table
+MULT_TABLE	uz	karra jadval; ko'paytirish jadvali
+STARS	ru	звездоч; =звезд; елочк; пирамид; =узор
+STARS	en	stars; asterisk; pyramid; =pattern
+STARS	uz	yulduzcha; piramida
+HELLO	ru	привет мир; =привет
+HELLO	en	hello world; =hello
+HELLO	uz	salom dunyo; =salom
+AGE	ru	возраст
+AGE	en	=age
+AGE	uz	yosh
+SUBSEQ_SUM	ru	сумма подмножеств
+SUBSEQ_SUM	en	subset sum
+SUBSEQ_SUM	uz	qism to'plam yig'indisi
+ADJACENT_NOT	ru	не соседн; несоседн
+ADJACENT_NOT	en	non-adjacent; not adjacent; no two adjacent
+ADJACENT_NOT	uz	qo'shni bo'lmagan
+PATTERN_GRID_PATHS	ru	вправо или вниз; вправо и вниз; только вправо
+PATTERN_GRID_PATHS	en	right or down; right and down
+PATTERN_GRID_PATHS	uz	o'ngga yoki pastga
+MINIMUM_COINS	ru	минимальн количеств монет; наименьш количеств монет
+MINIMUM_COINS	en	minimum number of coins; fewest coins
+MINIMUM_COINS	uz	eng kam tanga
+INPUT_LINE	ru	перв строк; втор строк; трет строк; следующ строк; единственн строк; одн строк; последн строк; кажд строк; кажд из следующ; в строк через
+INPUT_LINE	en	first line; second line; third line; next line; each line; single line; one line; following lines; last line; each of the next
+INPUT_LINE	uz	birinchi qator; ikkinchi qator; keyingi qator; birinchi satr; ikkinchi satr; keyingi satr; har bir qator; bitta qator
+LE_PHRASE	ru	не более; не больше; не превосход; не превыша
+LE_PHRASE	en	at most; not exceed; not exceeding; no more than; up to; does not exceed; no greater than
+LE_PHRASE	uz	dan oshmaydi; oshmaydigan; dan ko'p emas; oshmaydi
+GE_PHRASE	ru	не менее; не меньше
+GE_PHRASE	en	at least; no less than; not less than
+GE_PHRASE	uz	dan kam emas
+GREATER_EQ	ru	больш или равн; не меньш чем
+GREATER_EQ	en	greater than or equal; greater or equal; more than or equal
+GREATER_EQ	uz	katta yoki teng
+LESS_EQ	ru	меньш или равн; не больш чем
+LESS_EQ	en	less than or equal; less or equal; smaller than or equal
+LESS_EQ	uz	kichik yoki teng
+# ---------------------------------------------------------------- stop words
+# Frequent instruction words. They are matched (and ignored) so that the typo-tolerant
+# pass never mistakes them for a concept ("найдите" is not "найдётся").
+_STOP	ru	найд; найт; наход; вычисл; дан; =дано; =даны; =дана; требу; нужн; необходим; напиш; программ; порядк; =задача; =задачи; =его; =ее; =их; =который; котор; =этого; =этой; =если; =иначе; =затем; =после; =через; =каждое; =пример; =примеры; =ответ; =ввод; =вводится; =вводятся; =входные; =выходные; =данные; =формат; =будет; =является; =надо; =можно; =нельзя; =также; =только; =одно; =одна; =один; =пусть; =известно; =вывести; =выведите; =выводит
+_STOP	en	=find; =given; =compute; =calculate; =determine; =write; =program; =required; =need; =the; =then; =which; =that; =print; =your; =task; =example; =examples; =input; =output; =following; =contains; =there; =should
+_STOP	uz	=toping; =topilsin; =berilgan; =berilgan; =hisoblang; =yozing; =dastur; =dasturini; =tuzing; =uning; =ularning; =misol; =kiritiladi; =chiqarilsin; =chiqaring; =kiriting; =bo'lgan; =qilib
