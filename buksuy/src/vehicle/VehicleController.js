@@ -112,6 +112,7 @@ export class VehicleController {
     this.frozen = false;
     this.lastImpact = 0;
     this.pushForce = null;
+    this.stunned = 0;
   }
 
   // ---------- управление ----------
@@ -137,6 +138,12 @@ export class VehicleController {
         e.fwdTimer += dt;
         if (e.fwdTimer > 0.3) this._shiftTo(1, 0.25);
       } else e.fwdTimer = 0;
+    }
+    // после сильного удара руль на секунду вырывает из рук
+    if (this.stunned > 0) {
+      this.stunned -= dt;
+      steer = Math.sin(this.stunned * 13) * 0.8;
+      this.controls.throttle = 0;
     }
     this.controls.steer = steer;
     this.controls.handbrake = handbrake ? 1 : 0;
@@ -320,6 +327,10 @@ export class VehicleController {
     const v = Math.abs(this.speed);
     const maxA = BASE.maxSteer * (1 - 0.65 * smoothstep(3, 32, v));
     let target = this.controls.steer * maxA;
+    // спущенное колесо тянет в свою сторону
+    const fl = this.damage.flat;
+    const pull = (fl[0] ? -1 : 0) + (fl[1] ? 1 : 0) + (fl[2] ? -0.5 : 0) + (fl[3] ? 0.5 : 0);
+    if (pull && v > 3) target += pull * 0.07 * Math.min(1, v / 15);
     // разболтанная подвеска и спущенное переднее — руль гуляет
     if (fac.steerWobble > 0 && v > 4) target += Math.sin(performance.now() * 0.0047) * fac.steerWobble;
     const rate = 2.8;
@@ -703,7 +714,7 @@ export class VehicleController {
       if (pen > 0) {
         contacts.push({
           px: _p.x, py: _p.y, pz: _p.z, nx: gs.nx, ny: gs.ny, nz: gs.nz,
-          depth: pen * gs.ny, zone: 'bottom', lx: w.x, lz: w.z, kind: 'hub', mu: 0.75, e: 0,
+          depth: pen * gs.ny, zone: 'bottom', lx: w.x, lz: w.z, kind: 'hub', mu: 0.45, e: 0,
         });
       }
     }
@@ -854,6 +865,10 @@ export class VehicleController {
       speed: ct.impact, zone: ct.zone, base, lx: ct.lx, lz: ct.lz,
       x: ct.px, y: ct.py, z: ct.pz, kind, collider: ct.collider || null,
     });
+    if (base > 32 && Math.abs(this.speed) > 6) {
+      this.stunned = Math.min(1.4, 0.4 + base / 80);
+      this.events.emit('stunned', {});
+    }
     if (this.engine.on && base > 40 && chance(Math.min(0.9, base / 140))) {
       this.stopEngine('impact');
       this.events.emit('note', { text: 'От удара двигатель заглох.' });

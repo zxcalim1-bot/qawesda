@@ -98,6 +98,7 @@ button.danger { border-color: rgba(226, 85, 63, 0.5); }
 @keyframes blink { 50% { opacity: 0.5; } }
 .hud-top { position: fixed; right: 18px; top: 14px; font-family: var(--mono); font-size: 14px; color: var(--dim); text-align: right; text-shadow: 0 1px 2px #000; }
 .hud-top .money { color: var(--accent2); font-size: 16px; }
+.hud-top .obj { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #d8cfbf; margin-top: 4px; }
 .fps { position: fixed; left: 8px; bottom: 6px; font: 11px var(--mono); color: #8f8; }
 
 .radio-box {

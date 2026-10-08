@@ -293,6 +293,7 @@ export class AudioSystem {
         this._noise('lowpass', 90, 3.5, 0.5, d + 0.2);
         break;
       }
+      case 'honk': this._beep(330, 0.35, 0.09, 'square'); this._beep(415, 0.35, 0.07, 'square'); break;
       case 'moo': this._beep(170, 1.0, 0.15, 'sawtooth', 0, -40); break;
       case 'backfire': this._noise('lowpass', 600, 0.15, 0.6); break;
       case 'starter_click': this._beep(1200, 0.02, 0.1, 'square'); break;

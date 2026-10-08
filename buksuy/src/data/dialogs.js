@@ -179,6 +179,7 @@ export const DIALOGS = {
         options: [
           { text: 'Есть работа?', if: (g) => !q(g).known('parcel'), next: 'parcel' },
           { text: 'Посылку отвёз, всё нормально', if: (g) => q(g).isDone('parcel') && !flag(g, 'valera_thanked'), next: 'thanks' },
+          { text: 'Бензином не выручишь?', if: (g) => !flag(g, 'valera_fuel') && g.vehicle.fuel.fraction < 0.35, next: 'fuel' },
           { text: 'Расскажи про трассу', next: 'road' },
           { text: 'Почему сам не повезёшь на север?', next: 'why' },
           { text: 'Пока', next: 'bye' },
@@ -205,6 +206,18 @@ export const DIALOGS = {
       parcel_ok: { text: 'Вот и ладно. Только не кантуй. Я серьёзно. Там… ну, неважно что там. Хрупкое там.', next: 'hub' },
       parcel_no: { text: 'Как знаешь. Посылка подождёт. Она тридцать лет ждёт.', next: 'hub' },
       thanks: { text: 'Борис звонил. Доволен, как слон. Держи, остальное.', do: (g) => { g.story.setFlag('valera_thanked'); g.inventory.addMoney(750, 'посылка'); g.npcs.rel('valera', 2); }, next: 'hub' },
+      fuel: {
+        text: 'Бензином? У меня солярка. …Ладно, есть у меня канистра для генератора. Пять литров дам. Не за деньги — за совесть. Совесть у тебя есть?',
+        do: (g) => {
+          g.story.setFlag('valera_fuel');
+          const car = g.vehicle;
+          if (Math.hypot(car.pos.x - g.player.pos.x, car.pos.z - g.player.pos.z) < 25) car.fuel.refuel(5);
+          else g.inventory.give('canister', 1, { fuel: 5 }, 'pockets', false);
+          g.ui.notify('Валера залил 5 литров. Ласточка благодарно булькнула.', 'good');
+          g.npcs.rel('valera', 1);
+        },
+        next: 'hub',
+      },
       road: { text: 'Мост через Кривую новый, держит. Старый — не держит никого, особенно дураков. За перевалом — снег, без зимней резины даже не мечтай. И на серпантине не гони, там камни сыплются.', next: 'hub' },
       why: { text: 'Моя фура на север не ездит. Там шлагбаум, а у прапорщика Сидоренко ко мне личное. Я у него однажды… неважно. Пирожки он любит. Запомни.', next: 'hub' },
       bye: { text: 'Давай. Если увидишь мужика в плаще — не останавливайся. Мало ли.', end: true },
@@ -224,6 +237,7 @@ export const DIALOGS = {
           { text: 'А налево?', next: 'left' },
           { text: 'Расскажи про восемьдесят шестой', if: (g) => flag(g, 'efim_right'), next: 'story' },
           { text: 'Можно взять что-нибудь в сарае?', if: (g) => !flag(g, 'efim_ok'), next: 'barn' },
+          { text: 'Бензина не найдётся?', if: (g) => !flag(g, 'efim_kerosene'), next: 'kerosene' },
           { text: 'Пойду я', next: 'bye' },
         ],
       },
@@ -238,6 +252,23 @@ export const DIALOGS = {
         do: (g) => g.story.addClueFromNote('efim_story'),
         next: 'hub',
       },
+      kerosene: {
+        text: 'Бензина нет. Керосин есть. Для лампы. Твоя Ласточка на нём поедет, но обидится. Свечи закоптит. Нальёшь?',
+        options: [
+          {
+            text: 'Наливай. Выбора нет',
+            do: (g) => {
+              g.story.setFlag('efim_kerosene');
+              g.vehicle.fuel.refuel(6);
+              g.vehicle.damage.addFault('plugs');
+              g.ui.notify('6 литров керосина в баке. Свечи этого не простят.', 'warn');
+            },
+            next: 'kerosene_ok',
+          },
+          { text: 'Нет, спасибо', next: 'hub' },
+        ],
+      },
+      kerosene_ok: { text: 'Ну вот. Поедет, поедет. Чихать будет — ты ей «будь здорова» говори.', next: 'hub' },
       barn: { text: 'Бери, что под руку попадёт. Только трактор не трогай.', do: (g) => g.story.setFlag('efim_ok'), next: 'barn2' },
       barn2: { who: 'me', text: 'Там нет никакого трактора.', next: 'barn3' },
       barn3: { text: 'Вот и не трогай.', next: 'hub' },

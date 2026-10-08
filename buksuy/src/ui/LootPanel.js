@@ -81,11 +81,12 @@ export class StripPanel extends Panel {
     for (const p of parts) seen.set(p, (seen.get(p) || 0) + 1);
     for (const [key, n] of seen) {
       const def = WRECK_PARTS[key];
-      const it = ITEMS[def.item];
+      const it = def.item ? ITEMS[def.item] : { icon: '⛽', size: 0 };
       const row = el('div', 'slot');
-      row.append(el('div', 'ic', it.icon), el('div', 'nm', `${escapeHtml(def.name)}${n > 1 ? ' ×' + n : ''}<small>${def.time} мин работы · место: ${it.size}</small>`));
-      const b = el('button', 'primary', 'Снять');
-      b.disabled = !tools;
+      const sub = def.fuel ? `${def.time} мин · инструменты не нужны` : `${def.time} мин работы · место: ${it.size}`;
+      row.append(el('div', 'ic', it.icon), el('div', 'nm', `${escapeHtml(def.name)}${n > 1 ? ' ×' + n : ''}<small>${sub}</small>`));
+      const b = el('button', 'primary', def.fuel ? 'Слить' : 'Снять');
+      b.disabled = !tools && !def.fuel;
       b.onclick = () => {
         const r = wi.strip(this.id, key, def);
         this.msg = r.text;

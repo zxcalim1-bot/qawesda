@@ -11,6 +11,7 @@ import { VehicleModel } from '../vehicle/VehicleModel.js';
 import { VehicleRepair } from '../vehicle/VehicleRepair.js';
 import { DebrisSystem } from '../vehicle/Debris.js';
 import { CarEffects } from '../vehicle/CarEffects.js';
+import { Traffic } from '../world/Traffic.js';
 import { PlayerController } from '../player/PlayerController.js';
 import { CameraRig } from '../player/CameraRig.js';
 import { Inventory } from '../systems/Inventory.js';
@@ -125,6 +126,7 @@ export class Game {
     this.map = new MapSystem(this);
     this.achievements = new Achievements(this);
     this.worldInteractions = new WorldInteractions(this);
+    this.traffic = new Traffic(this);
     this.saves = new SaveSystem(this);
     setupGameEvents(this);
 
@@ -288,6 +290,7 @@ export class Game {
       if (n >= 14) this.acc = 0;
       this.vehicle.pushForce = null;
       this.debris.update(dt);
+      this.traffic.update(dt);
     }
     this.carModel.update(gdt, this.vehicle);
     if (!paused) this.carFx.update(dt);

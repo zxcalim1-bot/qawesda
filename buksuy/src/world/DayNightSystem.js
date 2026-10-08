@@ -3,8 +3,8 @@ import { clamp, lerp, smoothstep } from '../core/util.js';
 
 // ключевые цвета (sRGB) по высоте солнца
 const KEYS = [
-  { e: -0.3, zen: [0.008, 0.012, 0.035], hor: [0.03, 0.04, 0.075], sun: [0.4, 0.45, 0.6], sunI: 0.0, hemi: 0.05 },
-  { e: -0.08, zen: [0.04, 0.06, 0.16], hor: [0.32, 0.2, 0.2], sun: [1, 0.4, 0.2], sunI: 0.0, hemi: 0.12 },
+  { e: -0.3, zen: [0.012, 0.018, 0.045], hor: [0.045, 0.055, 0.095], sun: [0.4, 0.45, 0.6], sunI: 0.0, hemi: 0.13 },
+  { e: -0.08, zen: [0.04, 0.06, 0.16], hor: [0.32, 0.2, 0.2], sun: [1, 0.4, 0.2], sunI: 0.0, hemi: 0.2 },
   { e: 0.02, zen: [0.16, 0.22, 0.45], hor: [0.98, 0.56, 0.32], sun: [1, 0.55, 0.3], sunI: 1.0, hemi: 0.35 },
   { e: 0.18, zen: [0.2, 0.38, 0.72], hor: [0.78, 0.76, 0.75], sun: [1, 0.85, 0.65], sunI: 2.4, hemi: 0.75 },
   { e: 0.5, zen: [0.17, 0.4, 0.8], hor: [0.62, 0.76, 0.9], sun: [1, 0.96, 0.9], sunI: 3.1, hemi: 1.0 },
@@ -127,10 +127,10 @@ export class DayNightSystem {
     } else {
       // ночью тот же источник работает как луна
       this.sun.color.setRGB(0.55, 0.62, 0.85, THREE.SRGBColorSpace);
-      this.sun.intensity = 0.16 * (1 - cloud * 0.8);
+      this.sun.intensity = 0.32 * (1 - cloud * 0.6);
       this.lightDir = this.moonDir;
     }
-    this.hemi.intensity = k.hemi * 1.7 * (1 - gloom * 0.35) + this.flash * 4;
+    this.hemi.intensity = k.hemi * 2.1 * (1 - gloom * 0.3) + this.flash * 4;
     this.hemi.color.setRGB(Math.min(1, zen[0] * 1.6 + 0.35), Math.min(1, zen[1] * 1.4 + 0.38), Math.min(1, zen[2] * 1.1 + 0.42), THREE.SRGBColorSpace);
     this.hemi.groundColor.setRGB(0.42, 0.38, 0.3, THREE.SRGBColorSpace);
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 3);

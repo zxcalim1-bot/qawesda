@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { escapeHtml, fmtClock, fmtMoney } from '../core/util.js';
+import { escapeHtml, fmtClock, fmtMoney, fmtDist } from '../core/util.js';
 
 const KEY_LABEL = {
   interact: 'E', enter: 'F', push: 'G', ignition: 'Q', glovebox: 'B', sleep: 'Z', lights: 'L', radio: 'R',
@@ -276,7 +276,15 @@ export class UIManager {
     }
 
     const w = g.world.weather.info;
-    const top = `<div>${w.icon} ${fmtClock(g.world.dayNight.time)} · день ${g.world.dayNight.day}</div><div class="money">${fmtMoney(g.inventory.money)}</div>`;
+    let obj = '';
+    const q = g.quests.current();
+    if (q) {
+      const t = g.quests.target(q.id);
+      const p = g.playerPos;
+      const dist = t ? Math.hypot(t.x - p.x, t.z - p.z) : 0;
+      obj = `<div class="obj">📍 ${escapeHtml(q.title)}${t && dist > 60 ? ` · ${fmtDist(dist)}` : ''}</div>`;
+    }
+    const top = `<div>${w.icon} ${fmtClock(g.world.dayNight.time)} · день ${g.world.dayNight.day}</div><div class="money">${fmtMoney(g.inventory.money)}</div>${obj}`;
     if (top !== this._topHtml) {
       this.topEl.innerHTML = top;
       this._topHtml = top;

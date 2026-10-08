@@ -23,6 +23,7 @@ export class DialogSystem {
     if (!d || this.panel) return;
     this.dialog = d;
     this.npcId = npcId;
+    if (npcId) g.npcs.met.add(npcId);
     this.after = null;
     this.panel = new DialogPanel(g, this);
     this.panel.open();

@@ -5,7 +5,7 @@ import {
 } from './Props.js';
 import { makeTextTexture } from './materials.js';
 import { mulberry32 } from '../core/Random.js';
-import { WATER_Y } from './WorldLayout.js';
+import { WATER_Y, PADS } from './WorldLayout.js';
 
 // Расстановка построек по локациям. Возвращает «точки интереса» для систем игры.
 
@@ -27,6 +27,8 @@ export class Structures {
     this.windows = [];
     this.blinkers = [];
     this.special = {};
+    this.placed = [];
+    this.cullT = 0;
     this.rnd = mulberry32(4242);
   }
 
@@ -46,6 +48,7 @@ export class Structures {
     obj.position.set(x, y, z);
     obj.rotation.y = rot;
     this.group.add(obj);
+    this.placed.push({ obj, x, z, big: Math.max(opts.w || 0, opts.d || 0, opts.h || 0) > 12 });
     if (opts.collide !== false && opts.w) {
       this.colliders.add({
         type: 'box', x, z, hx: opts.w / 2, hz: opts.d / 2, rot,
@@ -125,7 +128,7 @@ export class Structures {
 
   misha() {
     this.house(54, 220, -Math.PI / 2, { wall: '#8d5f37', shutters: '#e8e2d0', w: 7, d: 8 });
-    this.npc('misha', 33, 205, -2.2);
+    this.npc('misha', 37, 199, -2.0);
     const shed = makeGarage({ w: 5, d: 6, h: 2.8, wall: '#7a6a5a', gate: '#6a4a30' });
     this.place(shed.group, 58, 196, -Math.PI / 2, { w: 5, d: 6, h: 3 });
     this.spot({ type: 'container', id: 'misha_shed', x: 54, z: 196, r: 3 });
@@ -683,6 +686,8 @@ export class Structures {
       const x = p.x + -p.dz * 13, z = p.z + p.dx * 13;
       const y = this.ground.height(x, z);
       if (y < WATER_Y + 0.5) continue;
+      // через заправки и дворы столбы не ставим
+      if (PADS.some((pd) => pd.r < 50 && Math.hypot(x - pd.x, z - pd.z) < pd.r + 6)) continue;
       m.makeRotationY(Math.atan2(p.dx, p.dz) + Math.PI / 2);
       m.setPosition(x, y - 0.2, z);
       inst.setMatrixAt(k++, m);
@@ -725,6 +730,15 @@ export class Structures {
     if (!b) return;
     b.open = open;
     b.collider.disabled = open;
+  }
+
+  // дальние постройки прячем: туман их всё равно съедает, а вызовов отрисовки много
+  cull(cam, viewDist) {
+    const lim = viewDist * 1.1, limBig = viewDist * 1.8;
+    for (const p of this.placed) {
+      const d = Math.hypot(p.x - cam.x, p.z - cam.z);
+      p.obj.visible = d < (p.big ? limBig : lim);
+    }
   }
 
   update(dt, time, darkness) {

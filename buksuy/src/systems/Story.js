@@ -117,6 +117,10 @@ export class Story {
       new TextPanel(g, 'ПУЛЬТ ПЕРЕДАТЧИКА', 'Лампы тёплые, стрелки дрожат. В наушниках — только шум и далёкий собачий лай. Похоже, днём эфир забит. Ночью сигнал должен быть чище.', { paper: false }).open();
       return;
     }
+    if (this.hasFlag('aurora_done')) {
+      new TextPanel(g, 'ПУЛЬТ ПЕРЕДАТЧИКА', 'Маяк молчит. Своё он уже сказал. Где-то внизу Ласточка тихо пощёлкивает остывающим мотором.', { paper: false }).open();
+      return;
+    }
     if (!carNear) {
       new TextPanel(g, 'ПУЛЬТ ПЕРЕДАТЧИКА', 'Ты щёлкаешь тумблером. Из наушников: «…Ласточка, Ласточка, я Маяк. Приём…» Голос ждёт ответа — но не твоего. Похоже, ответить должна сама машина. Пригони Ласточку к вышке.', { paper: false }).open();
       return;
@@ -124,7 +128,7 @@ export class Story {
     new TextPanel(g, 'ПУЛЬТ ПЕРЕДАТЧИКА', 'Ночь. Ласточка стоит у подножия вышки. На пульте горит одна-единственная надпись: «ОТВЕТ». Палец сам тянется к тумблеру.', {
       paper: false,
       buttons: [
-        { label: 'Нажать «ОТВЕТ»', primary: true, action: (p) => { p.close(); g.quests.complete('signal'); this.finish('aurora'); } },
+        { label: 'Нажать «ОТВЕТ»', primary: true, action: (p) => { p.close(); g.quests.complete('signal'); this.setFlag('aurora_done'); this.finish('aurora'); } },
         { label: 'Не трогать', action: (p) => p.close() },
       ],
     }).open();
@@ -163,13 +167,15 @@ export class Story {
     const city = g.world.structures.special.city;
     if (!city) return;
     const p = g.playerPos;
-    if (Math.hypot(p.x - city.x, p.z - city.z) < city.r) {
+    if (!this.hasFlag('city_reached') && Math.hypot(p.x - city.x, p.z - city.z) < city.r) {
       if (g.player.inCar) {
+        this.setFlag('city_reached');
         let id = 'main';
         if (this.clues.size >= SECRET_NEED) id = 'secret_city';
         else if (this.hasFlag('via_rail')) id = 'other_road';
         this.finish(id);
       } else if (Math.hypot(car.pos.x - city.x, car.pos.z - city.z) > 400) {
+        this.setFlag('city_reached');
         this.finish('on_foot');
       }
     }
@@ -200,7 +206,7 @@ export class Story {
     const e = ENDINGS[id];
     this.ending = id;
     this.endingsSeen.add(id);
-    g.quests.complete('main');
+    if (id !== 'aurora') g.quests.complete('main');
     g.achievements.unlock(e.achievement);
     if (id === 'secret_city' || id === 'main' || id === 'other_road') {
       g.npcs.setActive('kirill', true);

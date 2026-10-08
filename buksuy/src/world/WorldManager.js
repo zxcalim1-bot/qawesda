@@ -138,6 +138,11 @@ export class WorldManager {
     const north = Math.min(1, Math.max(0, (-focus.z - 2900) / 900));
     this.sky.uniforms.uAurora.value = Math.max(this.auroraForce || 0, dark * north * (1 - this.weather.cloud));
     this.structures.update(dt, this.sky.uniforms.uTime.value, dark);
+    this._cullT = (this._cullT || 0) - dt;
+    if (this._cullT <= 0) {
+      this._cullT = 0.5;
+      this.structures.cull(camera.position, vd);
+    }
     this.effects.update(dt, 0.35 + (1 - dark) * 0.65, this.ground);
 
     // ближайшие фонари получают настоящие PointLight

@@ -1,6 +1,6 @@
 import { Panel, el } from './UIManager.js';
 import { WORLD, LOCATIONS } from '../world/WorldLayout.js';
-import { CELL, PX } from '../systems/MapSystem.js';
+import { PX } from '../systems/MapSystem.js';
 import { escapeHtml } from '../core/util.js';
 
 const ROAD_STYLE = {
@@ -118,9 +118,45 @@ export class MapPanel extends Panel {
     ctx.imageSmoothingEnabled = this.zoom < 2;
     ctx.drawImage(base, ox, oy, base.width * this.zoom, base.height * this.zoom);
 
-    // дороги
+    // дороги (под туманом — кроме трассы, её знают все)
+    this._roads(ctx, (r) => r.id !== 'main');
+
+    // туман войны: маленькая картинка, растянутая со сглаживанием — края мягкие
+    const fog = this._fogCanvas();
+    const [fx0, fy0] = this._toScreen(WORLD.minX, WORLD.minZ);
+    const [fx1, fy1] = this._toScreen(WORLD.maxX, WORLD.maxZ);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(fog, fx0, fy0, fx1 - fx0, fy1 - fy0);
+
+    this._roads(ctx, (r) => r.id === 'main');
+    this._overlay(ctx, W, H);
+  }
+
+  _fogCanvas() {
+    const map = this.game.map;
+    if (!this.fogC) {
+      this.fogC = document.createElement('canvas');
+      this.fogC.width = map.fw;
+      this.fogC.height = map.fh;
+    }
+    const ctx = this.fogC.getContext('2d');
+    const img = ctx.createImageData(map.fw, map.fh);
+    for (let i = 0; i < map.fog.length; i++) {
+      const hidden = !map.fog[i];
+      img.data[i * 4] = 30 + ((i * 7) % 5);
+      img.data[i * 4 + 1] = 26 + ((i * 3) % 4);
+      img.data[i * 4 + 2] = 20;
+      img.data[i * 4 + 3] = hidden ? 255 : 0;
+    }
+    ctx.putImageData(img, 0, 0);
+    return this.fogC;
+  }
+
+  _roads(ctx, filter) {
+    const g = this.game;
     for (const r of g.world.roads.roads) {
       if (r.hidden && !r.discovered) continue;
+      if (!filter(r)) continue;
       const [col, w] = ROAD_STYLE[r.type] || ROAD_STYLE.dirt;
       ctx.strokeStyle = col;
       ctx.lineWidth = Math.max(1, w * Math.min(1.6, this.zoom * 0.8));
@@ -133,27 +169,11 @@ export class MapPanel extends Panel {
       ctx.stroke();
       ctx.setLineDash([]);
     }
+  }
 
-    // туман войны
+  _overlay(ctx, W, H) {
+    const g = this.game;
     const map = g.map;
-    const cellPx = (CELL / PX) * this.zoom;
-    ctx.fillStyle = 'rgba(28,24,19,0.94)';
-    const [x0] = this._toScreen(WORLD.minX, WORLD.minZ);
-    const [, y0] = this._toScreen(WORLD.minX, WORLD.minZ);
-    for (let cz = 0; cz < map.fh; cz++) {
-      const y = y0 + cz * cellPx;
-      if (y > H || y + cellPx < 0) continue;
-      let runStart = -1;
-      for (let cx = 0; cx <= map.fw; cx++) {
-        const hidden = cx < map.fw && !map.fog[cz * map.fw + cx];
-        if (hidden && runStart < 0) runStart = cx;
-        if (!hidden && runStart >= 0) {
-          ctx.fillRect(x0 + runStart * cellPx - 0.5, y - 0.5, (cx - runStart) * cellPx + 1, cellPx + 1);
-          runStart = -1;
-        }
-      }
-    }
-
     // локации
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

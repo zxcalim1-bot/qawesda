@@ -98,6 +98,7 @@ export class Inventory {
     this.money = 1200;
     // что лежало у дяди Миши в багажнике
     this.trunk.add('toolkit');
+    this.trunk.add('spare_wheel');
     this.trunk.add('canister', 1, { fuel: 0 });
     this.trunk.add('tape', 2);
     this.trunk.add('food', 1);

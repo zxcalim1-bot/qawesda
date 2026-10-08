@@ -1,11 +1,13 @@
 import { Panel, el } from './UIManager.js';
 import { NOTES } from '../data/places.js';
+import { NPCS } from '../data/npcs.js';
 import { ACHIEVEMENTS } from '../data/achievements.js';
 import { escapeHtml, fmtClock, fmtDist, fmtMoney } from '../core/util.js';
 
 const TABS = [
   ['quests', 'Задания'],
   ['notes', 'Записки'],
+  ['people', 'Люди'],
   ['radio', 'Радио'],
   ['achievements', 'Достижения'],
   ['stats', 'Статистика'],
@@ -70,6 +72,18 @@ export class JournalPanel extends Panel {
       box.append(el('h3', '', `${n.clue ? '🔎 ' : ''}${escapeHtml(n.title)}`));
       box.append(el('div', 'note-text', escapeHtml(n.text)));
       this.body.append(box);
+    }
+  }
+
+  _people() {
+    const g = this.game;
+    const met = [...g.npcs.met].filter((id) => NPCS[id]);
+    if (!met.length) this.body.append(el('p', 'hint', 'Ещё ни с кем не познакомился. Дядя Миша стоит у забора — начни с него.'));
+    for (const id of met) {
+      const n = NPCS[id];
+      const rel = g.npcs.relations[id] || 0;
+      const relText = rel >= 3 ? '<span class="tag ok">друг</span>' : rel > 0 ? '<span class="tag ok">хорошо относится</span>' : rel < 0 ? '<span class="tag">недоволен</span>' : '';
+      this.body.append(el('div', 'row', `<div class="name"><b>${escapeHtml(n.name)}</b> <small style="display:inline">${escapeHtml(n.title || '')}</small> ${relText}<small>Характер: ${escapeHtml(n.personality)}</small><small>${escapeHtml(n.bio)}</small></div>`));
     }
   }
 

@@ -23,7 +23,8 @@ test('заводится, разгоняется и тормозит', async () 
   run(car, 10, { fwd: 1 });
   const v = car.speedKmh;
   assert.ok(v > 45 && v < 150, `скорость после 10с газа: ${v.toFixed(1)}`);
-  assert.ok(car.engine.gear >= 2, 'автомат переключился');
+  // в момент проверки может идти переключение (gear = 0), поэтому смотрим и на целевую
+  assert.ok(Math.max(car.engine.gear, car.engine.targetGear) >= 2, 'автомат переключился');
   // тормозим, пока не встанем (дальше S включит задний ход — это нормально)
   let t = 0;
   while (car.speed > 0.3 && t < 8) {
@@ -110,4 +111,17 @@ test('коллизия с боксом выталкивает наружу', asy
   assert.ok(boxVsRect(b, 0, 0, 0, 1, 0.84, 2.08, out));
   assert.ok(out.nz < -0.9, 'нормаль от бокса к машине смотрит в -Z');
   assert.ok(out.depth > 0 && out.depth < 0.2);
+});
+
+test('три колеса — нормально: без заднего колеса едет', async () => {
+  const { car, roads } = await makeCar();
+  const p = roads.byId.main.at(700);
+  car.teleport(p.x, p.z, Math.atan2(p.dx, p.dz));
+  car.damage.detach('wheelRL');
+  run(car, 1);
+  startEngine(car);
+  const start = car.pos.clone();
+  run(car, 8, { fwd: 1 });
+  const moved = car.pos.distanceTo(start);
+  assert.ok(moved > 15, `проехала всего ${moved.toFixed(1)} м`);
 });

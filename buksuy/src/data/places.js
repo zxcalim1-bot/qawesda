@@ -116,6 +116,7 @@ export const WRECK_PARTS = {
   shock: { item: 'shock', time: 30, name: 'Амортизаторы' },
   fuel_pump: { item: 'fuel_pump', time: 25, name: 'Бензонасос' },
   glass: { item: 'glass', time: 30, name: 'Лобовое стекло' },
+  fuel: { item: null, fuel: true, time: 15, name: 'Слить бензин из бака (шланг и рот)' },
 };
 
 // Записки, фото и прочее «чтиво». clue — улика к тайне Северного города.
@@ -192,14 +193,14 @@ export const NOTES = {
 export const WRECKS = {
   wreck_kochki: { name: 'Старый «Москвич» на кирпичах', parts: ['battery', 'plugs', 'scrap'] },
   wreck_gena: { name: '«Копейка» Гены (донор)', parts: ['bulb', 'hose', 'scrap'] },
-  wreck_road1: { name: 'Брошенная «Волга»', parts: ['wheel', 'belt', 'brake_pads', 'scrap'] },
-  wreck_road2: { name: 'Ржавый «ИЖ-комби»', parts: ['battery', 'shock', 'scrap'] },
-  junk_1: { name: 'Синий «Жигуль»', parts: ['wheel', 'plugs', 'glass', 'scrap'] },
+  wreck_road1: { name: 'Брошенная «Волга»', parts: ['wheel', 'belt', 'brake_pads', 'fuel', 'scrap'] },
+  wreck_road2: { name: 'Ржавый «ИЖ-комби»', parts: ['battery', 'shock', 'fuel', 'scrap'] },
+  junk_1: { name: 'Синий «Жигуль»', parts: ['wheel', 'plugs', 'glass', 'fuel', 'scrap'] },
   junk_2: { name: 'Белая «Нива» без мотора', parts: ['shock', 'brake_pads', 'scrap'] },
   junk_3: { name: 'Красный «Запорожец»', parts: ['belt', 'bulb', 'scrap'] },
   junk_4: { name: 'Зелёный «Москвич»', parts: ['clutch', 'hose', 'scrap'], note: 'junk_diary' },
   junk_5: { name: '«Буханка» без колёс', parts: ['battery', 'fuel_pump', 'scrap'] },
   junk_6: { name: 'Чёрная «Волга»', parts: ['glass', 'wheel', 'scrap'] },
-  wreck_mount: { name: 'Грузовик в кювете', parts: ['wheel', 'battery', 'scrap', 'scrap'] },
-  wreck_north: { name: 'Вмёрзшая «Нива»', parts: ['belt', 'plugs', 'clutch', 'scrap'] },
+  wreck_mount: { name: 'Грузовик в кювете', parts: ['wheel', 'battery', 'fuel', 'fuel', 'scrap'] },
+  wreck_north: { name: 'Вмёрзшая «Нива»', parts: ['belt', 'plugs', 'clutch', 'fuel', 'scrap'] },
 };

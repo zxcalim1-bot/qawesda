@@ -8,6 +8,7 @@ const DETACH_TEXT = {
   hood: 'КАПОТ ОТВАЛИЛСЯ', trunk: 'КРЫШКА БАГАЖНИКА ОТВАЛИЛАСЬ',
   mirrorL: 'ЛЕВОЕ ЗЕРКАЛО ОТВАЛИЛОСЬ', mirrorR: 'ПРАВОЕ ЗЕРКАЛО ОТВАЛИЛОСЬ',
   exhaust: 'ГЛУШИТЕЛЬ ОТВАЛИЛСЯ',
+  headlightL: 'ЛЕВАЯ ФАРА ВЫЛЕТЕЛА', headlightR: 'ПРАВАЯ ФАРА ВЫЛЕТЕЛА',
   wheelFL: 'КОЛЕСО ОТВАЛИЛОСЬ', wheelFR: 'КОЛЕСО ОТВАЛИЛОСЬ', wheelRL: 'КОЛЕСО ОТВАЛИЛОСЬ', wheelRR: 'КОЛЕСО ОТВАЛИЛОСЬ',
 };
 
@@ -75,10 +76,14 @@ export function setupGameEvents(g) {
       vel.z += (Math.random() - 0.5) * 3;
       vel.y += 1.5 + Math.random() * 2;
       if (wheel) vel.multiplyScalar(1.15);
+      // разбитая фара — просто осколки, подбирать нечего
+      const lamp = e.id.startsWith('headlight');
       g.debris.spawn(obj, {
-        vel, rolling: wheel && vel.length() > 3, radius: wheel ? 0.3 : 0.12,
-        itemId: wheel ? 'part_wheel' : `part_${e.id}`, name: wheel ? 'Колесо' : ITEMS[`part_${e.id}`]?.name || e.name, partId: e.id,
+        vel, rolling: wheel && vel.length() > 3, radius: wheel ? 0.3 : lamp ? 0.08 : 0.12,
+        itemId: lamp ? null : wheel ? 'part_wheel' : `part_${e.id}`,
+        name: wheel ? 'Колесо' : ITEMS[`part_${e.id}`]?.name || e.name, partId: e.id,
       });
+      if (lamp) g.audio.play('glass');
     }
     if (e.id === 'doorL' || e.id === 'doorR') g.achievements.unlock('where_door');
     g.achievements.count('partsLost');
@@ -131,6 +136,10 @@ export function setupGameEvents(g) {
       ui.notify('В посылке что-то звонко хрустнуло. Ой.', 'warn');
     }
     if (e.base > 15) maybeDropFromTrunk(g);
+  });
+
+  ev.on('stunned', () => {
+    if (playing()) ui.notify('Удар! Руль вырвало из рук.', 'warn');
   });
 
   ev.on('car-landing', (e) => {

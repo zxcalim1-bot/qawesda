@@ -211,6 +211,7 @@ export class TerrainRenderer {
 
   setViewDistance(d) {
     this.nearDist = clamp(d * 0.6, 300, 800);
-    this.farDist = Math.max(d * 2.5, 1500);
+    // дальше тумана рисовать нечего — там всё равно цвет неба
+    this.farDist = d * 1.8 + 150;
   }
 }

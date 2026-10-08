@@ -50,6 +50,7 @@ export class NPCSystem {
     this.game = game;
     this.list = new Map();
     this.relations = {};
+    this.met = new Set();
     this._seq = 0;
     this.group = new THREE.Group();
     game.scene.add(this.group);
@@ -111,6 +112,7 @@ export class NPCSystem {
 
   talk(npc) {
     const g = this.game;
+    this.met.add(npc.id);
     if (npc.onTalk) {
       npc.onTalk();
       return;
@@ -141,7 +143,10 @@ export class NPCSystem {
     for (const n of this.list.values()) {
       if (!n.active) continue;
       const d = Math.hypot(p.x - n.x, p.z - n.z);
-      if (d > 150) {
+      // далёких человечков не рисуем — у каждого по полтора десятка мешей
+      const show = d < 140 || n.root.parent !== this.group;
+      if (n.root.visible !== show) n.root.visible = show;
+      if (d > 140) {
         n.dist = d;
         continue;
       }
@@ -151,6 +156,7 @@ export class NPCSystem {
 
   reset() {
     this.relations = {};
+    this.met = new Set();
     for (const [k, n] of [...this.list]) {
       if (n.temp) this.removeTemp(n);
       else {
@@ -163,10 +169,11 @@ export class NPCSystem {
   }
 
   serialize() {
-    return { relations: this.relations };
+    return { relations: this.relations, met: [...this.met] };
   }
 
   deserialize(d) {
     this.relations = d?.relations || {};
+    this.met = new Set(d?.met || []);
   }
 }

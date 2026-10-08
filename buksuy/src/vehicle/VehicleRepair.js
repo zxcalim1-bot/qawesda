@@ -164,7 +164,18 @@ export class VehicleRepair {
         break;
       }
       case 'headlightL': case 'headlightR':
-        if (hp < 100) o.push({ key: 'bulb', label: 'Поставить фару', needs: [['bulb', 1]], tools: true, time: 10, run: () => { d.setHp(id, 100); return 'Фара светит.'; } });
+        if (hp < 100) {
+          o.push({
+            key: 'bulb', label: 'Поставить фару', needs: [['bulb', 1]], tools: true, time: 10,
+            run: () => {
+              if (d.isDetached(id)) {
+                d.attach(id, 100);
+                this.game.carModel.reattach(id);
+              } else d.setHp(id, 100);
+              return 'Фара светит.';
+            },
+          });
+        }
         break;
       case 'body':
         if (hp < 80) o.push({ key: 'hammer', label: 'Выправить молотком (+25%)', needs: [['parts', 2]], tools: true, time: 40, run: () => { d.setHp('body', Math.min(80, hp + 25)); return 'Постучал. Стало ровнее. Местами.'; } });

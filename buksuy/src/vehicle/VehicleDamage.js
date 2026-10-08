@@ -13,8 +13,8 @@ export const PARTS = {
   wheelFR: { name: 'Колесо переднее правое', short: 'Колесо ПП', group: 'wheels', detachable: true, weight: 0.4 },
   wheelRL: { name: 'Колесо заднее левое', short: 'Колесо ЗЛ', group: 'wheels', detachable: true, weight: 0.4 },
   wheelRR: { name: 'Колесо заднее правое', short: 'Колесо ЗП', group: 'wheels', detachable: true, weight: 0.4 },
-  headlightL: { name: 'Левая фара', group: 'body', weight: 0.2 },
-  headlightR: { name: 'Правая фара', group: 'body', weight: 0.2 },
+  headlightL: { name: 'Левая фара', group: 'body', detachable: true, weight: 0.2 },
+  headlightR: { name: 'Правая фара', group: 'body', detachable: true, weight: 0.2 },
   body: { name: 'Кузов', group: 'body', weight: 1 },
   doorL: { name: 'Левая дверь', group: 'body', detachable: true, weight: 0.3 },
   doorR: { name: 'Правая дверь', group: 'body', detachable: true, weight: 0.3 },
@@ -329,7 +329,7 @@ export class VehicleDamage {
       const id = WHEEL_IDS[i];
       if (this.isDetached(id)) continue;
       if (this.flat[i] && s.speed > 1) {
-        this.damage(id, s.speed * 0.045 * dt, { quiet: true });
+        this.damage(id, s.speed * 0.022 * dt, { quiet: true });
         if (this.parts[id].hp <= 0) this.detach(id, { impulse: s.speed });
       } else if (s.rough > 0.02 && s.speed > 3) {
         this.damage(id, s.rough * s.speed * 0.012 * dt, { quiet: true });

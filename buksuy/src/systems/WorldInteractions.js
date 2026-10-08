@@ -190,6 +190,7 @@ export class WorldInteractions {
 
   strip(id, partKey, def) {
     const g = this.game;
+    if (def.fuel) return this._siphon(id, partKey, def);
     if (!g.inventory.has('toolkit', 1, true)) return { ok: false, text: 'Без инструментов тут делать нечего.' };
     const where = g.inventory.give(def.item, 1, null, 'trunk', g.nearCar);
     if (!where) return { ok: false, text: 'Некуда положить.' };
@@ -199,6 +200,28 @@ export class WorldInteractions {
     const w = WRECKS[id];
     if (w.note && !g.story.noteRead(w.note)) g.story.read(w.note);
     return { ok: true, text: `Снял: ${def.name} (${def.time} мин) → ${where.name.toLowerCase()}` };
+  }
+
+  // старый народный способ: шланг, рот и немного бензина в желудке
+  _siphon(id, partKey, def) {
+    const g = this.game;
+    const liters = 2 + Math.round(Math.random() * 4);
+    const car = g.vehicle;
+    const carNear = Math.hypot(car.pos.x - g.player.pos.x, car.pos.z - g.player.pos.z) < 8;
+    let text;
+    if (carNear) {
+      const added = car.fuel.refuel(liters);
+      text = `Слил ${added.toFixed(0)} л прямо в бак Ласточки. Во рту вкус бензина. Стоило того.`;
+    } else {
+      const can = g.inventory.canister(false, true);
+      if (!can) return { ok: false, text: 'Сливать некуда: подгони машину или принеси канистру.' };
+      can.state = { fuel: Math.min(20, (can.state?.fuel ?? 0) + liters) };
+      text = `Слил ${liters} л в канистру.`;
+    }
+    (this.stripped[id] || (this.stripped[id] = [])).push(partKey);
+    g.passTime(def.time);
+    g.needs.spend(3);
+    return { ok: true, text };
   }
 
   serialize() {
