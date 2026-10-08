@@ -67,7 +67,7 @@ export class Water {
       uv.push(p.x - rx * w, p.z - rz * w, p.x + rx * w, p.z + rz * w);
       if (i > 0) {
         const a = (i - 1) * 2;
-        idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+        idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
       }
     }
     const g = new THREE.BufferGeometry();

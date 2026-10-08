@@ -53,8 +53,9 @@ export class RoadRenderer {
         uv.push(0, v, 1, v);
         const ok = !inWater && r.h[i] > WATER_Y - 0.1;
         if (k > 0 && ok && lastOk) {
+          // a/b — левый/правый край предыдущего сэмпла, c/d — текущего; нормаль вверх
           const a = (k - 1) * 2, b = a + 1, c = k * 2, d = c + 1;
-          idx.push(a, c, b, b, c, d);
+          idx.push(a, b, c, b, d, c);
         }
         lastOk = ok;
         k++;

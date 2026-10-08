@@ -136,7 +136,7 @@ export class Effects {
     this.trackCol = new Float32Array(N * 4 * 4);
     const idx = new Uint32Array(N * 6);
     for (let i = 0; i < N; i++) {
-      idx.set([i * 4, i * 4 + 2, i * 4 + 1, i * 4 + 1, i * 4 + 2, i * 4 + 3], i * 6);
+      idx.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 1, i * 4 + 3, i * 4 + 2], i * 6);
     }
     const g = new THREE.BufferGeometry();
     this.trackPosAttr = new THREE.BufferAttribute(this.trackPos, 3).setUsage(THREE.DynamicDrawUsage);
