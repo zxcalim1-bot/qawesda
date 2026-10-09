@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {
   makeHouse, makeGarage, makeFence, makePowerPole, makeTent, makeWreck, makeSign, makePanelBlock,
-  paint, merge, box, propMaterial, metalMaterial, windowLitMaterial, glassMaterial, makeRock,
+  paint, merge, box, propMaterial, propMaterialDouble, metalMaterial, windowLitMaterial, glassMaterial, makeRock,
 } from './Props.js';
 import { makeTextTexture } from './materials.js';
 import { mulberry32 } from '../core/Random.js';
@@ -129,7 +129,7 @@ export class Structures {
   misha() {
     this.house(54, 220, -Math.PI / 2, { wall: '#8d5f37', shutters: '#e8e2d0', w: 7, d: 8 });
     this.npc('misha', 37, 199, -2.0);
-    const shed = makeGarage({ w: 5, d: 6, h: 2.8, wall: '#7a6a5a', gate: '#6a4a30' });
+    const shed = makeGarage({ mat: 'wood', w: 5, d: 6, h: 2.8, wall: '#7a6a5a', gate: '#6a4a30' });
     this.place(shed.group, 58, 196, -Math.PI / 2, { w: 5, d: 6, h: 3 });
     this.spot({ type: 'container', id: 'misha_shed', x: 54, z: 196, r: 3 });
     const fence = new THREE.Mesh(makeFence(36, 3), propMaterial);
@@ -137,7 +137,7 @@ export class Structures {
     const fence2 = new THREE.Mesh(makeFence(30, 4), propMaterial);
     this.place(fence2, 36, 232, 0, { collide: false });
     // лавочка
-    const bench = merge([paint(box(1.6, 0.08, 0.4, 0, 0.45, 0), '#7a5a3a'), paint(box(0.1, 0.45, 0.35, -0.7, 0.22, 0), '#5a4a3a'), paint(box(0.1, 0.45, 0.35, 0.7, 0.22, 0), '#5a4a3a')]);
+    const bench = merge([paint(box(1.6, 0.08, 0.4, 0, 0.45, 0), 'wood:#7a5a3a'), paint(box(0.1, 0.45, 0.35, -0.7, 0.22, 0), 'wood:#5a4a3a'), paint(box(0.1, 0.45, 0.35, 0.7, 0.22, 0), 'wood:#5a4a3a')]);
     this.place(new THREE.Mesh(bench, propMaterial), 46, 212, -Math.PI / 2, { collide: false });
   }
 
@@ -171,7 +171,7 @@ export class Structures {
       const t = new THREE.TorusGeometry(0.32, 0.12, 6, 12);
       t.rotateX(Math.PI / 2);
       t.translate(0, 0.12 + i * 0.24, 0);
-      tires.push(paint(t, '#1c1c1c', 0.2));
+      tires.push(paint(t, 'rubber:#1c1c1c', 0.2));
     }
     const tm = new THREE.Mesh(merge(tires), propMaterial);
     this.place(tm, 42, -36, 0, { w: 0.9, d: 0.9, h: 1.3, kind: 'tires' });
@@ -180,7 +180,7 @@ export class Structures {
     for (const [x, z] of [[0, 0], [0.7, 0.2], [0.3, 0.8]]) {
       const b = new THREE.CylinderGeometry(0.3, 0.3, 0.9, 10);
       b.translate(x, 0.45, z);
-      barrels.push(paint(b, '#2f5a3a', 0.2));
+      barrels.push(paint(b, 'metal:#2f5a3a', 0.2));
     }
     this.place(new THREE.Mesh(merge(barrels), propMaterial), 43, -12, 0, { w: 1.4, d: 1.4, h: 1, kind: 'barrel' });
     this.wreck('wreck_gena', 58, -6, 1.2, '#c9c0a8');
@@ -190,10 +190,10 @@ export class Structures {
   kolos() {
     // навес
     const parts = [];
-    parts.push(paint(box(9, 0.5, 12, 0, 5.2, 0), '#e8e2d4'));
-    parts.push(paint(box(9.1, 0.5, 0.1, 0, 5.2, 6.05), '#c83020'));
-    parts.push(paint(box(9.1, 0.5, 0.1, 0, 5.2, -6.05), '#c83020'));
-    for (const [x, z] of [[-3.5, -4.5], [3.5, -4.5], [-3.5, 4.5], [3.5, 4.5]]) parts.push(paint(box(0.35, 5, 0.35, x, 2.5, z), '#9a9a9a'));
+    parts.push(paint(box(9, 0.5, 12, 0, 5.2, 0), 'metal:#e8e2d4'));
+    parts.push(paint(box(9.1, 0.5, 0.1, 0, 5.2, 6.05), 'metal:#c83020'));
+    parts.push(paint(box(9.1, 0.5, 0.1, 0, 5.2, -6.05), 'metal:#c83020'));
+    for (const [x, z] of [[-3.5, -4.5], [3.5, -4.5], [-3.5, 4.5], [3.5, 4.5]]) parts.push(paint(box(0.35, 5, 0.35, x, 2.5, z), 'metal:#9a9a9a'));
     const canopy = new THREE.Mesh(merge(parts), propMaterial);
     canopy.castShadow = true;
     this.place(canopy, 70, -392, 0, { y: this.ground.height(70, -392), collide: false });
@@ -211,10 +211,10 @@ export class Structures {
 
   _pump(x, z, station) {
     const parts = [];
-    parts.push(paint(box(0.7, 1.6, 0.5, 0, 0.8, 0), station === 'old_gas' ? '#7a6a5a' : '#d8d4c8'));
-    parts.push(paint(box(0.72, 0.4, 0.52, 0, 1.4, 0), station === 'old_gas' ? '#6a3a2a' : '#c83020'));
-    parts.push(paint(box(0.4, 0.25, 0.05, 0, 1.05, 0.27), '#202020'));
-    parts.push(paint(box(0.9, 0.2, 0.7, 0, 0.1, 0), '#8a8a8a'));
+    parts.push(paint(box(0.7, 1.6, 0.5, 0, 0.8, 0), station === 'old_gas' ? 'rusty:#7a6a5a' : 'metal:#d8d4c8'));
+    parts.push(paint(box(0.72, 0.4, 0.52, 0, 1.4, 0), station === 'old_gas' ? 'rusty:#6a3a2a' : 'metal:#c83020'));
+    parts.push(paint(box(0.4, 0.25, 0.05, 0, 1.05, 0.27), 'metal:#202020'));
+    parts.push(paint(box(0.9, 0.2, 0.7, 0, 0.1, 0), 'concrete:#8a8a8a'));
     const m = new THREE.Mesh(merge(parts), propMaterial);
     m.castShadow = true;
     this.place(m, x, z, Math.PI / 2, { w: 0.8, d: 0.6, h: 1.8, kind: 'pump' });
@@ -226,15 +226,15 @@ export class Structures {
     this.spot({ type: 'container', id: 'blue_house', x: h.door.x, z: h.door.z, r: 3 });
     // колодец
     const well = merge([
-      paint(new THREE.CylinderGeometry(0.7, 0.7, 0.9, 10).translate(0, 0.45, 0), '#6a6a6a'),
-      paint(box(0.1, 1.6, 0.1, -0.6, 0.8, 0), '#5a4a3a'),
-      paint(box(0.1, 1.6, 0.1, 0.6, 0.8, 0), '#5a4a3a'),
-      paint(new THREE.ConeGeometry(1, 0.6, 4).rotateY(Math.PI / 4).translate(0, 1.9, 0), '#4a3a2a'),
+      paint(new THREE.CylinderGeometry(0.7, 0.7, 0.9, 16).translate(0, 0.45, 0), 'concrete:#7a7a76'),
+      paint(box(0.1, 1.6, 0.1, -0.6, 0.8, 0), 'wood:#5a4a3a'),
+      paint(box(0.1, 1.6, 0.1, 0.6, 0.8, 0), 'wood:#5a4a3a'),
+      paint(new THREE.ConeGeometry(1, 0.6, 4).rotateY(Math.PI / 4).translate(0, 1.9, 0), 'wood:#4a3a2a'),
     ]);
     this.place(new THREE.Mesh(well, propMaterial), -330, -620, 0, { w: 1.4, d: 1.4, h: 2 });
     this.spot({ type: 'container', id: 'blue_well', x: -330, z: -618, r: 2.5 });
     // покосившийся сарай
-    const shed = makeGarage({ w: 4, d: 5, h: 2.5, wall: '#5a5048', gate: '#4a3a30' });
+    const shed = makeGarage({ mat: 'wood', w: 4, d: 5, h: 2.5, wall: '#5a5048', gate: '#4a3a30' });
     shed.group.rotation.z = 0.08;
     this.place(shed.group, -362, -588, 0.6, { w: 4, d: 5, h: 2.6 });
   }
@@ -251,12 +251,12 @@ export class Structures {
     // фура Валеры
     const truck = new THREE.Group();
     const tparts = [];
-    tparts.push(paint(box(2.4, 2.4, 2.4, 0, 1.9, 4.5), '#b03020'));
-    tparts.push(paint(box(2.5, 2.8, 8.5, 0, 2.3, -1.2), '#d8d8d8'));
-    tparts.push(paint(box(2.2, 0.4, 11, 0, 0.6, 0.5), '#2a2a2a'));
+    tparts.push(paint(box(2.4, 2.4, 2.4, 0, 1.9, 4.5), 'metal:#b03020'));
+    tparts.push(paint(box(2.5, 2.8, 8.5, 0, 2.3, -1.2), 'metal:#d8d8d8'));
+    tparts.push(paint(box(2.2, 0.4, 11, 0, 0.6, 0.5), 'rusty:#3a3a3a'));
     for (const z of [4.5, -2.5, -4]) for (const x of [-1.05, 1.05]) {
       const w = new THREE.CylinderGeometry(0.5, 0.5, 0.35, 12).rotateZ(Math.PI / 2).translate(x, 0.5, z);
-      tparts.push(paint(w, '#1a1a1a'));
+      tparts.push(paint(w, 'rubber:#1a1a1a'));
     }
     const tm = new THREE.Mesh(merge(tparts), propMaterial);
     tm.castShadow = true;
@@ -266,7 +266,7 @@ export class Structures {
     this.place(truck, 18, -1280, -0.15, { w: 2.6, d: 11.5, h: 3.6, kind: 'truck' });
     // столики
     for (const dz of [-3, 3]) {
-      const t = merge([paint(box(1.6, 0.06, 0.9, 0, 0.75, 0), '#7a5a3a'), paint(box(0.1, 0.75, 0.1, 0, 0.37, 0), '#4a4a4a')]);
+      const t = merge([paint(box(1.6, 0.06, 0.9, 0, 0.75, 0), 'wood:#7a5a3a'), paint(box(0.1, 0.75, 0.1, 0, 0.37, 0), 'metal:#4a4a4a')]);
       this.place(new THREE.Mesh(t, propMaterial), 12, -1240 + dz, 0, { w: 1.6, d: 0.9, h: 1, kind: 'table' });
     }
     this.light(14, 3.4, -1250, 0xffc070, 30, 22);
@@ -296,7 +296,7 @@ export class Structures {
 
   efim() {
     this.house(-392, -1325, 0.9, { wall: '#9a6a4a', shutters: '#3f8a5a', w: 6, d: 7 });
-    const barn = makeGarage({ w: 6, d: 8, h: 3.4, wall: '#6a4a30', roof: '#4a4a4a', gate: '#5a3a20' });
+    const barn = makeGarage({ w: 6, d: 8, h: 3.4, wall: '#6a4a30', roof: '#4a4a4a', gate: '#5a3a20', mat: 'wood' });
     this.place(barn.group, -405, -1305, 0.9, { w: 6, d: 8, h: 3.6 });
     this.spot({ type: 'container', id: 'efim_barn', x: -401, z: -1300, r: 3 });
     this.npc('efim', -375, -1312, 0.9 + Math.PI);
@@ -319,8 +319,8 @@ export class Structures {
     }
     // костёр
     const fire = merge([
-      ...[0, 1, 2, 3].map((i) => paint(box(0.12, 0.12, 1.0, 0, 0.1, 0).rotateY(i * 0.8), '#4a3020')),
-      ...[0, 1, 2, 3, 4, 5].map((i) => paint(box(0.25, 0.2, 0.25, Math.cos(i) * 0.6, 0.1, Math.sin(i) * 0.6), '#6a6a6a')),
+      ...[0, 1, 2, 3].map((i) => paint(box(0.12, 0.12, 1.0, 0, 0.1, 0).rotateY(i * 0.8), 'wood:#4a3020')),
+      ...[0, 1, 2, 3, 4, 5].map((i) => paint(box(0.25, 0.2, 0.25, Math.cos(i) * 0.6, 0.1, Math.sin(i) * 0.6), 'stone:#6a6a6a')),
     ]);
     this.place(new THREE.Mesh(fire, propMaterial), 244, -1494, 0, { collide: false });
     const flame = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.8, 6), new THREE.MeshBasicMaterial({ color: 0xffa040, transparent: true, opacity: 0.85 }));
@@ -330,7 +330,7 @@ export class Structures {
     this.light(244, 1, -1494, 0xff9040, 35, 18);
     this.special.fireLight = this.lights.length - 1;
     // лодка
-    const boat = merge([paint(box(1.2, 0.4, 3.2, 0, 0.2, 0), '#5a7a8a'), paint(box(1.0, 0.1, 0.3, 0, 0.35, 0), '#7a5a3a')]);
+    const boat = merge([paint(box(1.2, 0.4, 3.2, 0, 0.2, 0), 'metal:#5a7a8a'), paint(box(1.0, 0.1, 0.3, 0, 0.35, 0), 'wood:#7a5a3a')]);
     this.place(new THREE.Mesh(boat, propMaterial), 262, -1512, 0.3, { w: 1.3, d: 3.3, h: 0.6, kind: 'boat' });
     this.npc('semenych', 241, -1497, 0.8);
   }
@@ -342,8 +342,8 @@ export class Structures {
       const x = -215 + Math.cos(a) * r, z = -1725 + Math.sin(a) * r;
       const h = 4 + this.rnd() * 4;
       const t = merge([
-        paint(new THREE.CylinderGeometry(0.08, 0.2, h, 5).translate(0, h / 2, 0), '#3a3228'),
-        paint(box(0.08, 1.4, 0.08, 0.4, h * 0.7, 0).rotateZ(-0.7), '#3a3228'),
+        paint(new THREE.CylinderGeometry(0.08, 0.2, h, 7).translate(0, h / 2, 0), 'wood:#4a4238'),
+        paint(new THREE.CylinderGeometry(0.03, 0.06, 1.4, 5).rotateZ(-0.7).translate(0.4, h * 0.7, 0), 'wood:#4a4238'),
       ]);
       this.place(new THREE.Mesh(t, propMaterial), x, z, this.rnd() * 6, { collide: false });
       this.colliders.add({ type: 'circle', x, z, r: 0.2, kind: 'tree', breakable: true, breakSpeed: 3, slow: 0.85, damage: 4 });
@@ -364,17 +364,17 @@ export class Structures {
     this.sign(['ШИНОМОНТАЖ', 'и не только'], 156, -2280, Math.PI + 0.3, { bg: '#2a2a2a', fg: '#ffd040' });
     this.npc('zina', 162, -2280, Math.PI);
     // баба Нюра на лавочке
-    const bench = merge([paint(box(1.6, 0.08, 0.4, 0, 0.45, 0), '#7a5a3a'), paint(box(0.1, 0.45, 0.35, -0.7, 0.22, 0), '#5a4a3a'), paint(box(0.1, 0.45, 0.35, 0.7, 0.22, 0), '#5a4a3a')]);
+    const bench = merge([paint(box(1.6, 0.08, 0.4, 0, 0.45, 0), 'wood:#7a5a3a'), paint(box(0.1, 0.45, 0.35, -0.7, 0.22, 0), 'wood:#5a4a3a'), paint(box(0.1, 0.45, 0.35, 0.7, 0.22, 0), 'wood:#5a4a3a')]);
     this.place(new THREE.Mesh(bench, propMaterial), 196, -2290, Math.PI / 2, { collide: false });
     this.npc('nyura', 196.5, -2290, Math.PI / 2);
     // гаражный ряд
     for (let i = 0; i < 5; i++) {
-      const gg = makeGarage({ w: 4, d: 6, h: 2.8, wall: '#8a8e90', gate: ['#3a5a8a', '#6a3a2a', '#3a6a4a', '#7a7a3a', '#5a5a5a'][i] });
+      const gg = makeGarage({ mat: 'brick', w: 4, d: 6, h: 2.8, wall: '#8a8e90', gate: ['#3a5a8a', '#6a3a2a', '#3a6a4a', '#7a7a3a', '#5a5a5a'][i] });
       this.place(gg.group, 230 + i * 4.3, -2245, Math.PI, { w: 4, d: 6, h: 3 });
     }
     this.sign(['17'], 230 + 2 * 4.3, -2247.6, Math.PI, { bg: '#e8e2d0', fg: '#1a1a1a', sw: 0.6, sh: 0.4, pole: 2.3, border: false, size: 90 });
     this.spot({ type: 'container', id: 'garage17', x: 230 + 2 * 4.3, z: -2249.5, r: 2.5 });
-    const shed = makeGarage({ w: 4, d: 4, h: 2.6, wall: '#6a5a4a', gate: '#4a3a2a' });
+    const shed = makeGarage({ mat: 'wood', w: 4, d: 4, h: 2.6, wall: '#6a5a4a', gate: '#4a3a2a' });
     this.place(shed.group, 110, -2300, 0.3, { w: 4, d: 4, h: 2.8 });
     this.spot({ type: 'container', id: 'pereval_shed', x: 111, z: -2296.5, r: 2.5 });
     this.spot({ type: 'shop', shop: 'pereval_shop', x: 160, z: -2275, r: 3, label: 'Прилавок шиномонтажа' });
@@ -383,21 +383,21 @@ export class Structures {
 
   factory() {
     const cx = 600, cz = -2450;
-    const hall = makeGarage({ w: 40, d: 24, h: 12, wall: '#8a6a5a', roof: '#4a4a4a', gate: '#5a6a5a' });
+    const hall = makeGarage({ mat: 'brick', w: 40, d: 24, h: 12, wall: '#8a6a5a', roof: '#4a4a4a', gate: '#5a6a5a' });
     this.place(hall.group, cx + 10, cz, Math.PI / 2, { w: 40, d: 24, h: 12 });
-    const hall2 = makeGarage({ w: 20, d: 28, h: 9, wall: '#9a8070', roof: '#4a4a4a', gate: '#6a5a4a' });
+    const hall2 = makeGarage({ mat: 'concrete', w: 20, d: 28, h: 9, wall: '#9a8070', roof: '#4a4a4a', gate: '#6a5a4a' });
     this.place(hall2.group, cx - 30, cz - 25, 0, { w: 20, d: 28, h: 9 });
     this.spot({ type: 'container', id: 'factory_hall', x: cx - 30, z: cz - 9.5, r: 3.5 });
-    const chim = new THREE.Mesh(paint(new THREE.CylinderGeometry(1.6, 2.6, 36, 14).translate(0, 18, 0), '#8a4a3a', 0.15), propMaterial);
+    const chim = new THREE.Mesh(paint(new THREE.CylinderGeometry(1.6, 2.6, 36, 20).translate(0, 18, 0), 'brick:#8a4a3a', 0.15), propMaterial);
     this.place(chim, cx + 30, cz + 25, 0, { w: 4.5, d: 4.5, h: 36 });
     for (let i = 0; i < 2; i++) {
-      const band = new THREE.Mesh(paint(new THREE.CylinderGeometry(1.75, 1.75, 1.2, 14).translate(0, 31 - i * 2.4, 0), i ? '#e8e2d0' : '#c83020'), propMaterial);
+      const band = new THREE.Mesh(paint(new THREE.CylinderGeometry(1.75, 1.75, 1.2, 20).translate(0, 31 - i * 2.4, 0), i ? 'paint:#e8e2d0' : 'paint:#c83020'), propMaterial);
       band.position.copy(chim.position);
       this.group.add(band);
     }
     // цистерны
     for (let i = 0; i < 3; i++) {
-      const t = new THREE.Mesh(paint(new THREE.CylinderGeometry(2.2, 2.2, 7, 14).rotateZ(Math.PI / 2).translate(0, 2.3, 0), '#7a5a40', 0.2), propMaterial);
+      const t = new THREE.Mesh(paint(new THREE.CylinderGeometry(2.2, 2.2, 7, 20).rotateZ(Math.PI / 2).translate(0, 2.3, 0), 'rusty:#7a5a40', 0.2), propMaterial);
       this.place(t, cx - 5 + i * 6, cz + 30, 0.1, { w: 7, d: 4.5, h: 4.5, kind: 'tank' });
     }
     // проходная + сторож
@@ -444,13 +444,13 @@ export class Structures {
       const m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(b * -0.03, 0, a * 0.03));
       leg.applyMatrix4(m);
       leg.translate(a * 1.2, H / 2, b * 1.2);
-      parts.push(paint(leg, '#b03020'));
+      parts.push(paint(leg, 'metal:#b03020'));
     }
     for (let k = 2; k < H; k += 3) {
       const s = 1.25 - (k / H) * 0.9;
       for (const r of [0, Math.PI / 2]) {
         const bar = box(s * 2, 0.06, 0.06, 0, k, 0).rotateY(r);
-        parts.push(paint(bar, k % 6 < 3 ? '#e8e2d0' : '#b03020'));
+        parts.push(paint(bar, k % 6 < 3 ? 'metal:#e8e2d0' : 'metal:#b03020'));
       }
     }
     const tower = new THREE.Mesh(merge(parts), metalMaterial);
@@ -484,11 +484,9 @@ export class Structures {
       arch.rotateX(-Math.PI / 2);
       arch.rotateY(Math.atan2(bx - ax, bz - az));
       arch.translate((ax + bx) / 2, r.h[i] + 0.4, (az + bz) / 2);
-      parts.push(paint(arch, '#5a5650', 0.15));
+      parts.push(paint(arch, 'concrete:#6a665e', 0.15));
     }
-    const mat = propMaterial.clone();
-    mat.side = THREE.DoubleSide;
-    const m = new THREE.Mesh(merge(parts), mat);
+    const m = new THREE.Mesh(merge(parts), propMaterialDouble);
     m.castShadow = true;
     m.receiveShadow = true;
     this.group.add(m);
@@ -496,9 +494,9 @@ export class Structures {
     for (const i of [i0, i1]) {
       const ang = Math.atan2(r.x[Math.min(r.n - 1, i + 1)] - r.x[i], r.z[Math.min(r.n - 1, i + 1)] - r.z[i]);
       const portal = merge([
-        paint(box(1.2, 8, 1.2, -4.8, 4, 0), '#6a6660'),
-        paint(box(1.2, 8, 1.2, 4.8, 4, 0), '#6a6660'),
-        paint(box(10.8, 1.5, 1.2, 0, 8.2, 0), '#6a6660'),
+        paint(box(1.2, 8, 1.2, -4.8, 4, 0), 'concrete:#7a766e'),
+        paint(box(1.2, 8, 1.2, 4.8, 4, 0), 'concrete:#7a766e'),
+        paint(box(10.8, 1.5, 1.2, 0, 8.2, 0), 'concrete:#7a766e'),
       ]);
       const pm = new THREE.Mesh(portal, propMaterial);
       pm.position.set(r.x[i], r.h[i] - 0.2, r.z[i]);
@@ -513,8 +511,8 @@ export class Structures {
   oldGas() {
     const cx = -54, cz = -3500;
     const parts = [];
-    parts.push(paint(box(8, 0.4, 9, 0, 4.6, 0), '#8a7a6a'));
-    for (const [x, z] of [[-3, -3.8], [3, -3.8], [-3, 3.8]]) parts.push(paint(box(0.3, 4.5, 0.3, x, 2.25, z), '#6a6a6a'));
+    parts.push(paint(box(8, 0.4, 9, 0, 4.6, 0), 'rusty:#8a7a6a'));
+    for (const [x, z] of [[-3, -3.8], [3, -3.8], [-3, 3.8]]) parts.push(paint(box(0.3, 4.5, 0.3, x, 2.25, z), 'rusty:#6a6a6a'));
     const canopy = new THREE.Mesh(merge(parts), propMaterial);
     canopy.rotation.z = 0.06;
     this.place(canopy, cx + 8, cz, 0, { collide: false });
@@ -529,7 +527,7 @@ export class Structures {
   iceHut() {
     const x = 430, z = -3930;
     const y = this.terrain.lakeY;
-    const hut = makeGarage({ w: 2.5, d: 3, h: 2.2, wall: '#7a5a3a', roof: '#4a4a4a', gate: '#5a3a2a' });
+    const hut = makeGarage({ mat: 'wood', w: 2.5, d: 3, h: 2.2, wall: '#7a5a3a', roof: '#4a4a4a', gate: '#5a3a2a' });
     this.place(hut.group, x, z, 0.4, { y, w: 2.5, d: 3, h: 2.4 });
     this.spot({ type: 'container', id: 'ice_hut', x: x + 0.6, z: z + 1.8, r: 2.5 });
   }
@@ -545,13 +543,13 @@ export class Structures {
     this.npc('sidorenko', n.x + -n.dz * 5, n.z + n.dx * 5, ang - Math.PI / 2);
     // шлагбаум
     const pivot = new THREE.Group();
-    const arm = new THREE.Mesh(paint(box(9, 0.15, 0.15, 4.5, 0, 0), '#e8e2d0'), propMaterial);
+    const arm = new THREE.Mesh(paint(box(9, 0.15, 0.15, 4.5, 0, 0), 'metal:#e8e2d0'), propMaterial);
     for (let i = 0; i < 5; i++) {
-      const stripe = new THREE.Mesh(paint(box(0.6, 0.16, 0.16, 1 + i * 1.8, 0, 0), '#c83020'), propMaterial);
+      const stripe = new THREE.Mesh(paint(box(0.6, 0.16, 0.16, 1 + i * 1.8, 0, 0), 'metal:#c83020'), propMaterial);
       arm.add(stripe);
     }
     pivot.add(arm);
-    const post = new THREE.Mesh(paint(box(0.3, 1.1, 0.3, 0, -0.55, 0), '#3a3a3a'), propMaterial);
+    const post = new THREE.Mesh(paint(box(0.3, 1.1, 0.3, 0, -0.55, 0), 'metal:#3a3a3a'), propMaterial);
     pivot.add(post);
     const px = n.x + -n.dz * 4.6, pz = n.z + n.dx * 4.6;
     pivot.position.set(px, this.ground.height(px, pz) + 1.1, pz);
@@ -562,7 +560,7 @@ export class Structures {
     this.special.barrier = { pivot, collider: col, open: false, angle: 0 };
     this.spot({ type: 'container', id: 'checkpoint_box', x: bx + -n.dx * 2.5, z: bz + -n.dz * 2.5, r: 2.2 });
     for (const s of [-1, 1]) {
-      const blocks = new THREE.Mesh(paint(box(1, 0.8, 2, 0, 0.4, 0), '#9a9a90'), propMaterial);
+      const blocks = new THREE.Mesh(paint(box(1, 0.8, 2, 0, 0.4, 0), 'concrete:#9a9a90'), propMaterial);
       this.place(blocks, n.x + -n.dz * s * 9 + n.dx * 3, n.z + n.dx * s * 9 + n.dz * 3, ang, { w: 1, d: 2, h: 0.8, kind: 'block' });
     }
     this.sign(['СТОЙ!', 'КПП'], n.x + -n.dz * 6 + n.dx * 25, n.z + n.dx * 6 + n.dz * 25, ang + Math.PI, { bg: '#c83020' });
@@ -571,14 +569,14 @@ export class Structures {
 
   depot() {
     const x = -172, z = -4500;
-    const shed = makeGarage({ w: 14, d: 30, h: 8, wall: '#7a5a4a', roof: '#3a3a3a', gate: '#4a4a3a' });
+    const shed = makeGarage({ mat: 'brick', w: 14, d: 30, h: 8, wall: '#7a5a4a', roof: '#3a3a3a', gate: '#4a4a3a' });
     this.place(shed.group, x - 18, z + 6, 0.5, { w: 14, d: 30, h: 8 });
     // ржавый паровоз
     const loco = merge([
-      paint(new THREE.CylinderGeometry(1.1, 1.1, 6, 12).rotateX(Math.PI / 2).translate(0, 2, 1), '#2a2a2a'),
-      paint(box(2.6, 2.8, 2.4, 0, 2.4, -3), '#3a2a2a'),
-      paint(box(2.4, 0.5, 9, 0, 0.6, -0.5), '#4a3a2a'),
-      paint(new THREE.CylinderGeometry(0.35, 0.45, 1.4, 8).translate(0, 3.6, 3), '#2a2a2a'),
+      paint(new THREE.CylinderGeometry(1.1, 1.1, 6, 20).rotateX(Math.PI / 2).translate(0, 2, 1), 'rusty:#3a3a3a'),
+      paint(box(2.6, 2.8, 2.4, 0, 2.4, -3), 'rusty:#4a3a3a'),
+      paint(box(2.4, 0.5, 9, 0, 0.6, -0.5), 'rusty:#4a3a2a'),
+      paint(new THREE.CylinderGeometry(0.35, 0.45, 1.4, 12).translate(0, 3.6, 3), 'rusty:#2a2a2a'),
     ]);
     this.place(new THREE.Mesh(loco, propMaterial), x - 6, z + 26, 0.55, { w: 2.8, d: 9.5, h: 4.4, kind: 'loco' });
     const office = makeGarage({ w: 4, d: 4, h: 2.8, wall: '#a8a090', gate: '#4a4a4a' });
@@ -607,9 +605,9 @@ export class Structures {
     plaza.receiveShadow = true;
     this.group.add(plaza);
     const ped = merge([
-      paint(box(5, 1.2, 7, 0, 0.6, 0), '#9a9890'),
-      paint(box(4.4, 0.25, 6.4, 0, 1.32, 0), '#7a7870'),
-      paint(box(1.4, 0.5, 0.05, 0, 0.6, 3.53), '#c8a050'),
+      paint(box(5, 1.2, 7, 0, 0.6, 0), 'stone:#9a9890'),
+      paint(box(4.4, 0.25, 6.4, 0, 1.32, 0), 'concrete:#7a7870'),
+      paint(box(1.4, 0.5, 0.05, 0, 0.6, 3.53), 'metal:#c8a050'),
     ]);
     this.place(new THREE.Mesh(ped, propMaterial), px, pz, 0, { w: 5, d: 7, h: 1.4, kind: 'pedestal' });
     this.spot({ type: 'note', id: 'pedestal', x: px, z: pz + 4.6, r: 2.5, label: 'Прочитать табличку' });
@@ -619,7 +617,7 @@ export class Structures {
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2;
       const lx = px + Math.cos(a) * 24, lz = pz + Math.sin(a) * 24;
-      const lamp = merge([paint(box(0.12, 5, 0.12, 0, 2.5, 0), '#3a3a3a'), paint(box(0.5, 0.2, 0.5, 0, 5.05, 0), '#3a3a3a')]);
+      const lamp = merge([paint(new THREE.CylinderGeometry(0.06, 0.09, 5, 8).translate(0, 2.5, 0), 'metal:#3a3a3a'), paint(box(0.5, 0.2, 0.5, 0, 5.05, 0), 'metal:#3a3a3a')]);
       this.place(new THREE.Mesh(lamp, metalMaterial), lx, lz, 0, { collide: false });
       this.colliders.add({ type: 'circle', x: lx, z: lz, r: 0.15, kind: 'pole' });
       const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), windowLitMaterial);
@@ -634,7 +632,7 @@ export class Structures {
     letters.position.set(ex, this.ground.height(ex, ez) + 3.6, ez);
     letters.rotation.y = Math.PI * 0.95;
     this.group.add(letters);
-    const stand = new THREE.Mesh(paint(box(14.4, 1.8, 0.6, 0, 0.9, 0), '#9a9890'), propMaterial);
+    const stand = new THREE.Mesh(paint(box(14.4, 1.8, 0.6, 0, 0.9, 0), 'concrete:#9a9890'), propMaterial);
     this.place(stand, ex, ez - 0.2, Math.PI * 0.95, { w: 14.4, d: 0.6, h: 2 });
     this.special.city = { x: px, z: pz, r: 34 };
   }

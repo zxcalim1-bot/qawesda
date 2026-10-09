@@ -1,4 +1,7 @@
 node_modules/
 dist/
+dist-single/
+buksuy-play.html
 *.log
 .vite/
+.texcache/

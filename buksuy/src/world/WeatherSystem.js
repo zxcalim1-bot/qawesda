@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { clamp, lerp, damp, weightedPick } from '../core/util.js';
 import { regionAt } from './WorldLayout.js';
 import { weatherUniforms } from './materials.js';
+import { fogState } from '../render/atmosphere.js';
 
 export const WEATHER = {
   clear: { name: 'Ясно', icon: '☀️', cloud: 0.12, rain: 0, snow: 0, fog: 0, wind: 0.2, storm: 0 },
@@ -227,18 +228,19 @@ export class WeatherSystem {
       }
     }
 
-    // туман
-    const fog = this.scene.fog;
-    if (fog) {
-      const night = dayNight ? dayNight.darkness : 0;
-      let far = viewDist * 1.7;
-      far = lerp(far, 110, this.fogAmount * this.fogAmount);
-      far = Math.min(far, lerp(far, 420, this.rain));
-      far = Math.min(far, lerp(far, 300, this.snow));
-      far *= 1 - night * 0.35;
-      fog.far = far;
-      fog.near = Math.min(far * 0.15, 60);
-    }
+    // туман: дымка по расстоянию + слой у земли (в тумане и на рассвете)
+    let vis = viewDist * 1.9;
+    vis = lerp(vis, 120, this.fogAmount * this.fogAmount);
+    vis = Math.min(vis, lerp(vis, 480, this.rain));
+    vis = Math.min(vis, lerp(vis, 320, this.snow));
+    vis *= 1 - night * 0.25;
+    this.visibility = vis;
+    const hour = dayNight ? dayNight.time : 12;
+    const mist = hour > 3.5 && hour < 8.5 ? Math.sin(((hour - 3.5) / 5) * Math.PI) * 0.006 : 0;
+    fogState.params[0] = this.fogAmount * 0.03 + mist + this.rain * 0.002;
+    fogState.params[1] = 0.045;
+    fogState.params[2] = camera.position.y - 6;
+    fogState.params[3] = 3.2 / vis;
   }
 
   // множитель сцепления для поверхности

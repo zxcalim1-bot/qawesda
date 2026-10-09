@@ -54,7 +54,7 @@ export class SettingsPanel extends Panel {
       return e;
     };
     this.body.append(el('h3', '', 'Графика'));
-    row('Качество', select('quality', [['low', 'Низкое (слабый компьютер)'], ['medium', 'Среднее'], ['high', 'Высокое']]));
+    row('Качество', select('quality', [['low', 'Низкое (слабый компьютер)'], ['medium', 'Среднее'], ['high', 'Высокое'], ['ultra', 'Ультра (мощная видеокарта)']]));
     row('Дальность прорисовки', range('viewDistance', 400, 1600, 50, (v) => `${v} м`));
     row('Тени', check('shadows'));
     row('Показывать FPS', check('showFps'));

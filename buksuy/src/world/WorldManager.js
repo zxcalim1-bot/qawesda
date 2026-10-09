@@ -6,12 +6,16 @@ import { ColliderGrid } from './Colliders.js';
 import { TerrainRenderer } from './TerrainRenderer.js';
 import { RoadRenderer } from './RoadRenderer.js';
 import { Water } from './Water.js';
+import { Grass } from './Grass.js';
+import { heightTexture } from '../render/shaderlib.js';
 import { Vegetation } from './Vegetation.js';
 import { Structures } from './Structures.js';
 import { Sky } from './Sky.js';
 import { DayNightSystem } from './DayNightSystem.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { Effects } from './Effects.js';
+import { initPropMaterials } from './Props.js';
+import { windUniforms } from './Trees.js';
 import { LOCATIONS, regionAt } from './WorldLayout.js';
 
 // Собирает мир: рельеф, дороги, лес, постройки, небо, погоду.
@@ -34,10 +38,13 @@ export class WorldManager {
     progress(0.92, 'Строим дома');
     await new Promise((r) => setTimeout(r, 0));
     const q = this.game.settings.get('quality');
-    this.terrainRenderer = new TerrainRenderer(this.scene, this.terrain);
+    initPropMaterials(q);
+    this.terrainRenderer = new TerrainRenderer(this.scene, this.terrain, q);
     this.roadRenderer = new RoadRenderer(this.scene, this.roads, this.terrain);
-    this.water = new Water(this.scene, this.terrain);
-    this.vegetation = new Vegetation(this.scene, this.terrain, this.colliders, q);
+    this.heightTex = heightTexture(this.terrain);
+    this.water = new Water(this.scene, this.terrain, this.heightTex);
+    this.grass = new Grass(this.scene, this.terrain, this.heightTex);
+    this.vegetation = new Vegetation(this.scene, this.terrain, this.colliders, q, this.game.renderer);
     this.structures = new Structures(this).build();
     this.sky = new Sky(this.scene);
     this.dayNight = new DayNightSystem(this.scene, this.sky, this.game.settings);
@@ -61,6 +68,7 @@ export class WorldManager {
     this.viewDistance = vd;
     this.terrainRenderer.setViewDistance(vd);
     this.vegetation.setQuality(this.game.settings.get('quality'));
+    this.grass.setQuality(this.game.settings.get('quality'));
   }
 
   warm(x, z) {
@@ -128,10 +136,11 @@ export class WorldManager {
     const vd = this.viewDistance;
     this.terrainRenderer.update(camera.position);
     this.roadRenderer.update(camera.position, vd);
-    this.vegetation.update(camera.position, vd);
+    windUniforms.uWind.value += (0.2 + this.weather.wind * 0.9 - windUniforms.uWind.value) * Math.min(1, dt);
+    this.vegetation.update(camera.position, vd, dt);
     this.dayNight.update(dt, focus, this.weather);
     this.weather.update(dt, dtHours, camera, focus.z, this.dayNight, vd);
-    this.sky.update(camera, dt);
+    this.sky.update(camera, dt, this.weather.wind, this.weather.wind * 0.4);
     this.water.update(dt);
     const dark = this.dayNight.darkness;
     // северное сияние: ночью, в ясную погоду, ближе к северу
@@ -143,7 +152,10 @@ export class WorldManager {
       this._cullT = 0.5;
       this.structures.cull(camera.position, vd);
     }
-    this.effects.update(dt, 0.35 + (1 - dark) * 0.65, this.ground);
+    const dn = this.dayNight;
+    this._fxLight = this._fxLight || new THREE.Color();
+    this._fxLight.copy(dn.sun.color).multiplyScalar(dn.sun.intensity * 0.12).add(dn.skyAmbient).addScalar(0.04 + dn.hemi.intensity * 0.3);
+    this.effects.update(dt, this._fxLight, this.ground);
 
     // ближайшие фонари получают настоящие PointLight
     const lights = this.structures.lights

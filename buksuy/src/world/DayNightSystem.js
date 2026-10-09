@@ -1,29 +1,18 @@
 import * as THREE from 'three';
 import { clamp, lerp, smoothstep } from '../core/util.js';
+import { skyRadiance, sunTransmittance, fogState } from '../render/atmosphere.js';
 
-// ключевые цвета (sRGB) по высоте солнца
-const KEYS = [
-  { e: -0.3, zen: [0.012, 0.018, 0.045], hor: [0.045, 0.055, 0.095], sun: [0.4, 0.45, 0.6], sunI: 0.0, hemi: 0.13 },
-  { e: -0.08, zen: [0.04, 0.06, 0.16], hor: [0.32, 0.2, 0.2], sun: [1, 0.4, 0.2], sunI: 0.0, hemi: 0.2 },
-  { e: 0.02, zen: [0.16, 0.22, 0.45], hor: [0.98, 0.56, 0.32], sun: [1, 0.55, 0.3], sunI: 1.0, hemi: 0.35 },
-  { e: 0.18, zen: [0.2, 0.38, 0.72], hor: [0.78, 0.76, 0.75], sun: [1, 0.85, 0.65], sunI: 2.4, hemi: 0.75 },
-  { e: 0.5, zen: [0.17, 0.4, 0.8], hor: [0.62, 0.76, 0.9], sun: [1, 0.96, 0.9], sunI: 3.1, hemi: 1.0 },
-];
-
-function sampleKeys(e) {
-  if (e <= KEYS[0].e) return KEYS[0];
-  for (let i = 0; i < KEYS.length - 1; i++) {
-    const a = KEYS[i], b = KEYS[i + 1];
-    if (e <= b.e) {
-      const t = (e - a.e) / (b.e - a.e);
-      const mix = (x, y) => x.map((v, k) => lerp(v, y[k], t));
-      return { zen: mix(a.zen, b.zen), hor: mix(a.hor, b.hor), sun: mix(a.sun, b.sun), sunI: lerp(a.sunI, b.sunI, t), hemi: lerp(a.hemi, b.hemi, t) };
-    }
-  }
-  return KEYS[KEYS.length - 1];
-}
+// Солнце, луна, цвет неба и тумана. Цвета считаются по той же модели рассеяния,
+// что и шейдер неба, поэтому закат сам получается оранжевым, а дымка у горизонта — голубой.
 
 const _c = new THREE.Color();
+const _c2 = new THREE.Color();
+const _sunT = new THREE.Color();
+const _v = new THREE.Vector3();
+const ZENITH = new THREE.Vector3(0, 1, 0);
+
+// ночью небо подсвечено луной и городами где-то за горизонтом
+const NIGHT_SKY = new THREE.Color(0.0045, 0.0075, 0.016);
 
 export class DayNightSystem {
   constructor(scene, sky, settings) {
@@ -37,22 +26,43 @@ export class DayNightSystem {
     this.sun = new THREE.DirectionalLight(0xffffff, 3);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
+    this.shadowRange = 70;
     const sc = this.sun.shadow.camera;
     sc.left = -70; sc.right = 70; sc.top = 70; sc.bottom = -70;
-    sc.near = 1; sc.far = 400;
-    this.sun.shadow.bias = -0.0004;
-    this.sun.shadow.normalBias = 0.04;
+    sc.near = 1; sc.far = 500;
+    this.sun.shadow.bias = -0.0003;
+    this.sun.shadow.normalBias = 0.035;
     scene.add(this.sun);
     scene.add(this.sun.target);
 
-    this.hemi = new THREE.HemisphereLight(0xbfd6ff, 0x4a4030, 1);
+    // слабая подсветка — в основном ночью; днём рассеянный свет даёт карта окружения
+    this.hemi = new THREE.HemisphereLight(0xbfd6ff, 0x4a4030, 0.2);
     scene.add(this.hemi);
 
     this.sunDir = new THREE.Vector3();
     this.moonDir = new THREE.Vector3();
+    this.lightDir = this.sunDir;
     this.elevation = 0;
     this.darkness = 0; // 0 день, 1 ночь — для фар, окон и т.п.
     this.flash = 0; // вспышка молнии
+    this.exposure = 1;
+    this.envIntensity = 1;
+    this.skyAmbient = new THREE.Color();
+    this.changed = 0; // насколько всё поменялось с прошлого обновления карты окружения
+    this._lastDir = new THREE.Vector3();
+    this._lastCloud = -1;
+  }
+
+  setShadowRange(r, size) {
+    this.shadowRange = r;
+    const sc = this.sun.shadow.camera;
+    sc.left = -r; sc.right = r; sc.top = r; sc.bottom = -r;
+    sc.updateProjectionMatrix();
+    if (size && this.sun.shadow.mapSize.x !== size) {
+      this.sun.shadow.mapSize.set(size, size);
+      this.sun.shadow.map?.dispose();
+      this.sun.shadow.map = null;
+    }
   }
 
   get hours() {
@@ -83,65 +93,92 @@ export class DayNightSystem {
     this.sunDir.set(Math.cos(a) * ce, elev, Math.sin(a) * ce * 0.7 + 0.3).normalize();
     this.moonDir.set(-this.sunDir.x, -this.sunDir.y * 0.8 + 0.25, -this.sunDir.z).normalize();
 
-    const k = sampleKeys(this.sunDir.y);
     const cloud = weather.cloud;
-    const gloom = cloud * 0.65 + weather.fogAmount * 0.25;
+    const haze = clamp(weather.fogAmount * 0.6 + weather.rain * 0.35, 0, 1);
+    const overcast = clamp(smoothstep(0.5, 0.95, cloud) * 0.92 + weather.storm * 0.08, 0, 1);
+    const night = 1 - smoothstep(-0.12, 0.06, this.sunDir.y);
+    this.darkness = night;
+    const moonUp = smoothstep(-0.05, 0.15, this.moonDir.y) * night;
+
+    // солнце сквозь атмосферу
+    sunTransmittance(this.sunDir, haze, _sunT);
+    const sunVis = smoothstep(-0.03, 0.03, this.sunDir.y);
+    const direct = (1 - overcast * 0.88) * (1 - cloud * 0.25);
 
     // небо
     const U = this.sky.uniforms;
     U.uSunDir.value.copy(this.sunDir);
     U.uMoonDir.value.copy(this.moonDir);
-    const grey = (c, amt) => {
-      const l = (c[0] + c[1] + c[2]) / 3;
-      return c.map((v) => lerp(v, l * 0.85, amt));
-    };
-    const zen = grey(k.zen, gloom);
-    const hor = grey(k.hor, gloom * 0.8);
-    U.uZenith.value.setRGB(...zen, THREE.SRGBColorSpace);
-    U.uHorizon.value.setRGB(...hor, THREE.SRGBColorSpace);
-    U.uSunColor.value.setRGB(...k.sun, THREE.SRGBColorSpace);
-    U.uGround.value.setRGB(hor[0] * 0.4, hor[1] * 0.4, hor[2] * 0.35, THREE.SRGBColorSpace);
+    U.uHaze.value = haze;
+    U.uOvercast.value = overcast;
     U.uCloud.value = cloud;
-    U.uCloudDark.value = weather.storm * 0.55 + weather.rain * 0.2;
-    const night = 1 - smoothstep(-0.15, 0.05, this.sunDir.y);
-    this.darkness = night;
+    U.uCloudDark.value = weather.storm * 0.6 + weather.rain * 0.25;
+    U.uSunLight.value.copy(_sunT).multiplyScalar(2.4 * sunVis);
+    skyRadiance(ZENITH, this.sunDir, haze, this.skyAmbient);
+    this.skyAmbient.multiplyScalar(2.2);
+    _c.copy(NIGHT_SKY).multiplyScalar(1 + moonUp * 2.5);
+    U.uNight.value.copy(_c).multiplyScalar(night);
+    U.uAmbient.value.copy(this.skyAmbient).add(_c2.copy(NIGHT_SKY).multiplyScalar(6 * night));
     U.uStars.value = night * (1 - cloud);
     U.uMoon.value = night;
-    U.uFogMix.value = weather.fogAmount * 0.9 + weather.rain * 0.3;
+    U.uFogMix.value = weather.fogAmount * 0.85 + weather.rain * 0.25;
 
-    // туман
-    const fog = this.scene.fog;
-    if (fog) {
-      _c.setRGB(...hor, THREE.SRGBColorSpace);
-      fog.color.copy(_c);
-      U.uFog.value.copy(_c);
-    }
+    // цвет тумана: горизонт поперёк солнца и горизонт под солнцем
+    _v.set(-this.sunDir.z, 0.04, this.sunDir.x).normalize();
+    skyRadiance(_v, this.sunDir, haze, _c);
+    _c.add(_c2.copy(NIGHT_SKY).multiplyScalar(night * (1.2 + moonUp * 2)));
+    const lumFog = _c.r * 0.2126 + _c.g * 0.7152 + _c.b * 0.0722;
+    _c.lerp(_c2.setRGB(lumFog * 0.92, lumFog * 0.95, lumFog), overcast);
+    _c.multiplyScalar(1 - weather.storm * 0.35);
+    this.scene.fog.color.copy(_c);
+    U.uFog.value.copy(_c);
+    _v.set(this.sunDir.x, 0.04, this.sunDir.z).normalize();
+    skyRadiance(_v, this.sunDir, haze, _c2);
+    fogState.sunColor[0] = lerp(_c2.r, _c.r, overcast);
+    fogState.sunColor[1] = lerp(_c2.g, _c.g, overcast);
+    fogState.sunColor[2] = lerp(_c2.b, _c.b, overcast);
+    fogState.sun[0] = this.sunDir.x;
+    fogState.sun[1] = this.sunDir.y;
+    fogState.sun[2] = this.sunDir.z;
+    fogState.sun[3] = (1 - overcast) * sunVis;
 
-    // свет
-    let sunI = k.sunI * (1 - cloud * 0.7);
-    const sunUp = this.sunDir.y > -0.02;
-    if (sunUp) {
-      this.sun.color.setRGB(...k.sun, THREE.SRGBColorSpace);
-      this.sun.intensity = sunI;
+    // прямой свет
+    if (this.sunDir.y > -0.03) {
+      const l = Math.max(_sunT.r, _sunT.g, _sunT.b, 1e-4);
+      this.sun.color.setRGB(_sunT.r / l, _sunT.g / l, _sunT.b / l);
+      this.sun.intensity = 6.5 * l * direct * sunVis;
       this.lightDir = this.sunDir;
     } else {
       // ночью тот же источник работает как луна
-      this.sun.color.setRGB(0.55, 0.62, 0.85, THREE.SRGBColorSpace);
-      this.sun.intensity = 0.32 * (1 - cloud * 0.6);
+      this.sun.color.setRGB(0.62, 0.7, 0.95);
+      this.sun.intensity = 0.32 * (1 - cloud * 0.65) * moonUp + 0.02;
       this.lightDir = this.moonDir;
     }
-    this.hemi.intensity = k.hemi * 2.1 * (1 - gloom * 0.3) + this.flash * 4;
-    this.hemi.color.setRGB(Math.min(1, zen[0] * 1.6 + 0.35), Math.min(1, zen[1] * 1.4 + 0.38), Math.min(1, zen[2] * 1.1 + 0.42), THREE.SRGBColorSpace);
-    this.hemi.groundColor.setRGB(0.42, 0.38, 0.3, THREE.SRGBColorSpace);
+    // ночная заливка + вспышка молнии
+    this.hemi.intensity = 0.05 + night * 0.28 + this.flash * 5;
+    this.hemi.color.setRGB(0.55, 0.65, 0.95);
+    this.hemi.groundColor.setRGB(0.25, 0.22, 0.18);
     if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 3);
+    // при сплошной облачности рассеянный свет от неба чуть слабее, а тени мягче
+    this.envIntensity = lerp(1, 0.75, overcast);
+    this.sun.shadow.radius = 1 + overcast * 4;
+    // глаз привыкает к темноте
+    this.exposure = lerp(1.0, 2.2, night) * lerp(1, 1.25, overcast * (1 - night));
 
+    // насколько изменилось небо — для карты окружения
+    this.changed = this._lastDir.distanceTo(this.sunDir) * 40 + Math.abs(this._lastCloud - cloud) * 8 + this.flash;
     // тени следуют за игроком, привязка к текселю — чтобы не дрожали
-    const texel = 140 / this.sun.shadow.mapSize.x;
+    const texel = (this.shadowRange * 2) / this.sun.shadow.mapSize.x;
     const fx = Math.round(focus.x / texel) * texel;
     const fz = Math.round(focus.z / texel) * texel;
     this.sun.target.position.set(fx, focus.y, fz);
-    this.sun.position.set(fx + this.lightDir.x * 180, focus.y + this.lightDir.y * 180, fz + this.lightDir.z * 180);
+    this.sun.position.set(fx + this.lightDir.x * 250, focus.y + this.lightDir.y * 250, fz + this.lightDir.z * 250);
     this.sun.target.updateMatrixWorld();
+  }
+
+  markEnvUpdated(weather) {
+    this._lastDir.copy(this.sunDir);
+    this._lastCloud = weather.cloud;
   }
 
   serialize() {

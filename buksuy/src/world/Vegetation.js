@@ -1,20 +1,19 @@
 import * as THREE from 'three';
-import { hash2, mulberry32 } from '../core/Random.js';
+import { hash2 } from '../core/Random.js';
 import { WATER_Y, PADS, LAKE } from './WorldLayout.js';
 import { SURF } from './Surfaces.js';
-import { makeSpruce, makePine, makeBirch, makeBush, makeRock, merge, leafMaterial, propMaterial, paint } from './Props.js';
+import { makeRock, propMaterial } from './Props.js';
+import { buildTrees, windUniforms } from './Trees.js';
 
 const VCELLS = 64; // клеток террейна на чанк растительности (256 м)
 const SPACING = 6.5;
+const KEYS = ['spruce', 'spruceSnow', 'pine', 'birch'];
 
-function treeGeo(t) {
-  const list = [t.leaf];
-  if (t.wood) list.push(t.wood);
-  return merge(list);
-}
-
+// Лес. Деревья ближе lodDist — полноценные модели, дальше — снимки (импосторы).
+// Кто где — пересчитываем на процессоре раз в несколько кадров: это дешевле,
+// чем гонять сотни тысяч вершин невидимых деревьев через шейдер.
 export class Vegetation {
-  constructor(scene, terrain, colliders, quality = 'medium') {
+  constructor(scene, terrain, colliders, quality = 'medium', renderer) {
     this.scene = scene;
     this.terrain = terrain;
     this.colliders = colliders;
@@ -23,35 +22,26 @@ export class Vegetation {
     scene.add(this.group);
     this.setQuality(quality);
 
-    // прототипы
-    this.protos = {
-      spruce: [treeGeo(makeSpruce(11)), treeGeo(makeSpruce(12))],
-      spruceSnow: [treeGeo(makeSpruce(21, true)), treeGeo(makeSpruce(22, true))],
-      pine: [treeGeo(makePine(31)), treeGeo(makePine(32))],
-      birch: [treeGeo(makeBirch(41)), treeGeo(makeBirch(42))],
-      bush: [makeBush(51).leaf, makeBush(52).leaf],
-      rock: [makeRock(61, 1), makeRock(62, 1)],
-    };
-    // дальний LOD — один конус/шар на всех, цвет через instanceColor
-    const farCone = new THREE.ConeGeometry(2.4, 9, 5);
-    farCone.translate(0, 6.5, 0);
-    const farTrunk = new THREE.CylinderGeometry(0.2, 0.25, 3, 4);
-    farTrunk.translate(0, 1.5, 0);
-    this.farGeo = merge([paint(farCone, '#ffffff'), paint(farTrunk, '#8a7a6a')]);
-    this.farMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true });
+    this.kit = buildTrees(renderer);
+    this.rockGeo = [makeRock(61, 1), makeRock(62, 1)];
 
     this.ncx = Math.ceil((terrain.nx - 1) / VCELLS);
     this.ncz = Math.ceil((terrain.nz - 1) / VCELLS);
     this.chunks = new Map();
     this.padList = PADS.map((p) => ({ x: p.x, z: p.z, r: p.r + 6 }));
     this.extraClear = []; // места, где деревья нельзя (добавляет WorldManager)
+    this._lodT = 0;
+    this._lastCam = new THREE.Vector3(1e9, 0, 0);
   }
 
   setQuality(q) {
     this.quality = q;
-    this.density = q === 'low' ? 0.45 : q === 'high' ? 1 : 0.75;
-    this.nearDist = q === 'low' ? 260 : q === 'high' ? 420 : 340;
-    this.shadowDist = q === 'low' ? 0 : q === 'high' ? 260 : 160;
+    const hi = q === 'high' || q === 'ultra';
+    this.density = q === 'low' ? 0.5 : hi ? 1 : 0.8;
+    this.lodDist = { low: 70, medium: 105, high: 140, ultra: 190 }[q] ?? 105;
+    this.shadowDist = { low: 0, medium: 70, high: 95, ultra: 120 }[q] ?? 70;
+    this.bushDist = q === 'low' ? 120 : 220;
+    this._forceLod = true;
   }
 
   clearArea(x, z, r) {
@@ -75,11 +65,10 @@ export class Vegetation {
     const x0 = t.minX + cx * VCELLS * t.cell;
     const z0 = t.minZ + cz * VCELLS * t.cell;
     const size = VCELLS * t.cell;
-    const items = {}; // proto key -> [{x,y,z,rot,scale,variant}]
-    const far = [];
-    const rnd = mulberry32(cx * 7919 + cz * 104729 + 17);
+    const trees = [];
+    const rocks = [];
+    const bushes = [];
     const steps = Math.floor(size / SPACING);
-    const add = (key, it) => (items[key] || (items[key] = [])).push(it);
 
     for (let j = 0; j < steps; j++) {
       for (let i = 0; i < steps; i++) {
@@ -101,112 +90,182 @@ export class Vegetation {
         const rockChance = (z < -2100 ? 0.012 : 0.003) + (surf === SURF.rock ? 0.05 : 0);
         if (hash2(gx, gz, 5) < rockChance && rd > 5 && !this._blocked(x, z)) {
           const s = 0.6 + hash2(gx, gz, 6) * 2.2;
-          add('rock', { x, y: h - s * 0.15, z, rot: r * 6.28, scale: s, variant: r < 0.5 ? 0 : 1, big: s > 1.3 });
+          rocks.push({ x, y: h - s * 0.2, z, rot: r * 6.28, scale: s, variant: r < 0.5 ? 0 : 1, big: s > 1.3 });
           continue;
         }
         if (r > f * this.density) {
-          // одинокие кусты на опушках
-          if (f > 0.15 && f < 0.6 && hash2(gx, gz, 7) < 0.05 * this.density && !this._blocked(x, z)) {
-            add('bush', { x, y: h, z, rot: r * 6.28, scale: 0.8 + r * 0.6, variant: r < 0.5 ? 0 : 1 });
+          // кусты на опушках и в полях
+          const bushChance = (f > 0.1 && f < 0.7 ? 0.09 : 0.012) * this.density;
+          if (hash2(gx, gz, 7) < bushChance && !this._blocked(x, z) && surf !== SURF.snow && surf !== SURF.rock) {
+            bushes.push({ x, y: h - 0.05, z, rot: r * 6.28, scale: 0.8 + hash2(gx, gz, 11) * 0.9, variant: r < 0.5 ? 0 : 1 });
           }
           continue;
         }
         if (this._blocked(x, z)) continue;
         if (surf === SURF.rock && hash2(gx, gz, 8) < 0.7) continue;
 
-        // какое дерево: юг — берёзы и сосны, лес — сосна/ель/берёза, горы — ели, север — ели в снегу
+        // юг — берёзы и сосны, лес — сосна/ель/берёза, горы — ели, север — ели в снегу
         const snowy = t.snow[t.idx(Math.round((x - t.minX) / t.cell), Math.round((z - t.minZ) / t.cell))] > 120;
         const k = hash2(gx, gz, 9);
         let key;
         if (z > -900) key = k < 0.55 ? 'birch' : k < 0.85 ? 'pine' : 'spruce';
         else if (z > -2100) key = k < 0.25 ? 'birch' : k < 0.6 ? 'pine' : 'spruce';
         else key = k < 0.15 ? 'pine' : 'spruce';
-        if (snowy && key === 'spruce') key = 'spruceSnow';
-        if (snowy && key === 'birch') key = 'spruceSnow';
+        if (snowy && (key === 'spruce' || key === 'birch')) key = 'spruceSnow';
         const scale = 0.75 + hash2(gx, gz, 10) * 0.6;
-        const it = { x, y: h - 0.1, z, rot: r * 6.28, scale, variant: k < 0.5 ? 0 : 1 };
-        add(key, it);
-        far.push({ x, y: h - 0.1, z, scale, key });
+        trees.push({ key, variant: k < 0.5 ? 0 : 1, x, y: h - 0.15, z, rot: r * 6.28, scale, broken: false });
       }
     }
 
-    // меши
-    const near = new THREE.Group();
-    const m = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
+    const ch = { cx, cz, x: x0 + size / 2, z: z0 + size / 2, size, trees, group: new THREE.Group(), near: {}, colliders: [], bushes: [] };
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sv = new THREE.Vector3(), pv = new THREE.Vector3();
     const up = new THREE.Vector3(0, 1, 0);
-    const sv = new THREE.Vector3();
-    const pv = new THREE.Vector3();
-    const colliderList = [];
-    for (const [key, list] of Object.entries(items)) {
+    const sphere = new THREE.Sphere(new THREE.Vector3(ch.x, t.heightAt(ch.x, ch.z) + 10, ch.z), size * 0.8);
+
+    // ближние модели: по паре мешей (листва + ствол) на каждый вид и вариант
+    for (const key of KEYS) {
       for (let v = 0; v < 2; v++) {
-        const sub = list.filter((it) => it.variant === v);
-        if (!sub.length) continue;
-        const geo = this.protos[key][v];
-        const mat = key === 'rock' ? propMaterial : leafMaterial;
-        const inst = new THREE.InstancedMesh(geo, mat, sub.length);
-        sub.forEach((it, i) => {
-          q.setFromAxisAngle(up, it.rot);
-          sv.setScalar(it.scale);
-          pv.set(it.x, it.y, it.z);
-          m.compose(pv, q, sv);
-          inst.setMatrixAt(i, m);
-          // коллайдеры
-          if (key === 'rock') {
-            if (it.big) colliderList.push({ type: 'circle', x: it.x, z: it.z, r: it.scale * 0.85, y0: it.y - 1, y1: it.y + it.scale * 0.9, kind: 'rock' });
-          } else if (key === 'bush') {
-            colliderList.push({ type: 'circle', x: it.x, z: it.z, r: 0.7 * it.scale, y0: it.y, y1: it.y + 1, kind: 'bush', breakable: true, breakSpeed: 0.5, slow: 0.97, inst, idx: i });
-          } else {
-            const small = key === 'birch' && it.scale < 0.95;
-            colliderList.push({
-              type: 'circle', x: it.x, z: it.z, r: (key === 'birch' ? 0.2 : 0.3) * it.scale + 0.08, y0: it.y - 1, y1: it.y + 8,
-              kind: 'tree', breakable: small, breakSpeed: 7, slow: 0.7, damage: 6, inst, idx: i,
-            });
-          }
-        });
-        inst.instanceMatrix.needsUpdate = true;
-        inst.computeBoundingSphere();
-        inst.receiveShadow = true;
-        inst.userData.key = key;
-        near.add(inst);
+        const n = trees.filter((tr) => tr.key === key && tr.variant === v).length;
+        if (!n) continue;
+        const proto = this.kit.protos[key][v];
+        const meshes = [];
+        for (const [geo, mat] of [[proto.leaf, proto.leafMat], [proto.wood, proto.woodMat]]) {
+          if (!geo) continue;
+          const im = new THREE.InstancedMesh(geo, mat, n);
+          im.count = 0;
+          im.boundingSphere = sphere;
+          im.receiveShadow = true;
+          ch.group.add(im);
+          meshes.push(im);
+        }
+        ch.near[`${key}${v}`] = meshes;
       }
     }
-    for (const c of colliderList) this.colliders.add(c);
 
-    // дальний LOD
-    let farMesh = null;
-    if (far.length) {
-      farMesh = new THREE.InstancedMesh(this.farGeo, this.farMat, far.length);
-      const col = new THREE.Color();
-      far.forEach((it, i) => {
-        sv.set(it.scale, it.scale * (it.key === 'pine' ? 1.3 : 1), it.scale);
-        pv.set(it.x, it.y, it.z);
-        q.identity();
-        m.compose(pv, q, sv);
-        farMesh.setMatrixAt(i, m);
-        if (it.key === 'birch') col.setRGB(0.3, 0.42, 0.14);
-        else if (it.key === 'spruceSnow') col.setRGB(0.55, 0.62, 0.62);
-        else if (it.key === 'pine') col.setRGB(0.15, 0.24, 0.09);
-        else col.setRGB(0.08, 0.16, 0.07);
-        farMesh.setColorAt(i, col);
-      });
-      farMesh.instanceMatrix.needsUpdate = true;
-      farMesh.computeBoundingSphere();
+    // дальние снимки — одним мешем, ячейка атласа через атрибут
+    if (trees.length) {
+      const geo = this.kit.impostorGeo.clone();
+      geo.setAttribute('aCell', new THREE.InstancedBufferAttribute(new Float32Array(trees.length * 4), 4));
+      const im = new THREE.InstancedMesh(geo, this.kit.impostorMat, trees.length);
+      im.count = 0;
+      im.boundingSphere = sphere;
+      ch.group.add(im);
+      ch.impostor = im;
+      ch.cellAttr = geo.attributes.aCell;
     }
 
-    return {
-      cx, cz, x: x0 + size / 2, z: z0 + size / 2,
-      near, far: farMesh, colliders: colliderList, trees: far.length,
-    };
+    // камни
+    for (let v = 0; v < 2; v++) {
+      const list = rocks.filter((it) => it.variant === v);
+      if (!list.length) continue;
+      const im = new THREE.InstancedMesh(this.rockGeo[v], propMaterial, list.length);
+      list.forEach((it, i) => {
+        q.setFromAxisAngle(up, it.rot);
+        sv.set(it.scale, it.scale * 0.9, it.scale);
+        pv.set(it.x, it.y, it.z);
+        m.compose(pv, q, sv);
+        im.setMatrixAt(i, m);
+        if (it.big) ch.colliders.push({ type: 'circle', x: it.x, z: it.z, r: it.scale * 0.85, y0: it.y - 1, y1: it.y + it.scale * 0.9, kind: 'rock' });
+      });
+      im.instanceMatrix.needsUpdate = true;
+      im.computeBoundingSphere();
+      im.castShadow = true;
+      im.receiveShadow = true;
+      ch.group.add(im);
+    }
+
+    // кусты
+    for (let v = 0; v < 2; v++) {
+      const list = bushes.filter((it) => it.variant === v);
+      if (!list.length) continue;
+      const proto = this.kit.protos.bush[v];
+      const im = new THREE.InstancedMesh(proto.leaf, proto.leafMat, list.length);
+      list.forEach((it, i) => {
+        q.setFromAxisAngle(up, it.rot);
+        sv.setScalar(it.scale);
+        pv.set(it.x, it.y, it.z);
+        m.compose(pv, q, sv);
+        im.setMatrixAt(i, m);
+        ch.colliders.push({ type: 'circle', x: it.x, z: it.z, r: 0.7 * it.scale, y0: it.y, y1: it.y + 1, kind: 'bush', breakable: true, breakSpeed: 0.5, slow: 0.97, inst: im, idx: i });
+      });
+      im.instanceMatrix.needsUpdate = true;
+      im.computeBoundingSphere();
+      im.receiveShadow = true;
+      ch.group.add(im);
+      ch.bushes.push(im);
+    }
+
+    // коллайдеры деревьев
+    for (const tr of trees) {
+      const small = tr.key === 'birch' && tr.scale < 0.95;
+      ch.colliders.push({
+        type: 'circle', x: tr.x, z: tr.z, r: (tr.key === 'birch' ? 0.2 : 0.3) * tr.scale + 0.08, y0: tr.y - 1, y1: tr.y + 8,
+        kind: 'tree', breakable: small, breakSpeed: 7, slow: 0.7, damage: 6, inst: tr, chunk: ch,
+      });
+    }
+    for (const c of ch.colliders) this.colliders.add(c);
+    ch.state = null;
+    return ch;
   }
 
-  update(cam, viewDist) {
+  // раскладываем деревья чанка по ближним моделям и дальним снимкам
+  _relod(ch, cam, lod2, shadow2) {
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sv = new THREE.Vector3(), pv = new THREE.Vector3();
+    const up = new THREE.Vector3(0, 1, 0);
+    for (const meshes of Object.values(ch.near)) for (const im of meshes) im.count = 0;
+    const imp = ch.impostor;
+    if (imp) imp.count = 0;
+    let anyShadow = false;
+    for (const tr of ch.trees) {
+      if (tr.broken) continue;
+      const dx = tr.x - cam.x, dz = tr.z - cam.z;
+      const d2 = dx * dx + dz * dz;
+      q.setFromAxisAngle(up, tr.rot);
+      pv.set(tr.x, tr.y, tr.z);
+      if (d2 < lod2) {
+        sv.setScalar(tr.scale);
+        m.compose(pv, q, sv);
+        for (const im of ch.near[`${tr.key}${tr.variant}`]) im.setMatrixAt(im.count++, m);
+        if (d2 < shadow2) anyShadow = true;
+      } else if (imp) {
+        const c = this.kit.protos[tr.key][tr.variant].cell;
+        sv.set(c.w * tr.scale, c.h * tr.scale, c.w * tr.scale);
+        m.compose(pv, q, sv);
+        const i = imp.count++;
+        imp.setMatrixAt(i, m);
+        ch.cellAttr.setXYZW(i, c.u, c.v, c.du, c.dv);
+      }
+    }
+    for (const meshes of Object.values(ch.near)) {
+      for (const im of meshes) {
+        im.instanceMatrix.needsUpdate = true;
+        im.castShadow = anyShadow;
+      }
+    }
+    if (imp) {
+      imp.instanceMatrix.needsUpdate = true;
+      ch.cellAttr.needsUpdate = true;
+    }
+  }
+
+  update(cam, viewDist, dt = 0.016) {
     let budget = 1;
-    const genDist = Math.max(this.nearDist + 150, Math.min(viewDist * 1.6, 1600));
+    const genDist = Math.max(this.lodDist + 300, Math.min(viewDist * 1.6, 1600));
+    const t = this.terrain;
+    const size = VCELLS * t.cell;
+    windUniforms.uTime.value += dt;
+    this._lodT -= dt;
+    const moved = this._lastCam.distanceToSquared(cam) > 16;
+    const doLod = this._forceLod || (this._lodT <= 0 && moved);
+    if (doLod) {
+      this._lodT = 0.2;
+      this._lastCam.copy(cam);
+      this._forceLod = false;
+    }
+    const lod2 = this.lodDist * this.lodDist;
+    const shadow2 = this.shadowDist * this.shadowDist;
     for (let cz = 0; cz < this.ncz; cz++) {
       for (let cx = 0; cx < this.ncx; cx++) {
-        const t = this.terrain;
-        const size = VCELLS * t.cell;
         const x = t.minX + (cx + 0.5) * size, z = t.minZ + (cz + 0.5) * size;
         const d = Math.max(0, Math.hypot(x - cam.x, z - cam.z) - size * 0.7);
         const key = cz * 1000 + cx;
@@ -214,37 +273,49 @@ export class Vegetation {
         if (!ch && d < genDist && budget > 0) {
           ch = this._generate(cx, cz);
           this.chunks.set(key, ch);
-          this.group.add(ch.near);
-          if (ch.far) this.group.add(ch.far);
+          this.group.add(ch.group);
           budget--;
         }
         if (!ch) continue;
-        const isNear = d < this.nearDist;
-        ch.near.visible = isNear;
-        if (ch.far) ch.far.visible = !isNear && d < viewDist * 1.6;
-        const shadows = d < this.shadowDist;
-        if (ch.shadows !== shadows) {
-          ch.shadows = shadows;
-          for (const m of ch.near.children) m.castShadow = shadows;
+        ch.group.visible = d < viewDist * 1.6;
+        if (!ch.group.visible) continue;
+        // чанк целиком далеко — один раз разложить всё в снимки и не трогать
+        if (d > this.lodDist + 10) {
+          if (ch.state !== 'far') {
+            this._relod(ch, cam, 0, 0);
+            ch.state = 'far';
+          }
+        } else if (doLod || ch.state !== 'mixed') {
+          this._relod(ch, cam, lod2, shadow2);
+          ch.state = 'mixed';
         }
+        for (const b of ch.bushes) b.visible = d < this.bushDist;
       }
     }
   }
 
   warm(x, z, viewDist) {
-    for (let i = 0; i < 40; i++) this.update({ x, z }, viewDist);
+    const cam = new THREE.Vector3(x, 0, z);
+    for (let i = 0; i < 40; i++) {
+      this._forceLod = true;
+      this.update(cam, viewDist, 0);
+    }
+    this._forceLod = true;
   }
 
   // спрятать сломанное дерево/куст
   breakInstance(c) {
     if (!c.inst) return;
-    const m = new THREE.Matrix4();
-    c.inst.getMatrixAt(c.idx, m);
-    const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
-    m.decompose(p, q, s);
-    c.broken = { p, q, s };
-    m.makeScale(0, 0, 0);
-    c.inst.setMatrixAt(c.idx, m);
-    c.inst.instanceMatrix.needsUpdate = true;
+    if (c.inst.isInstancedMesh) {
+      const m = new THREE.Matrix4();
+      m.makeScale(0, 0, 0);
+      c.inst.setMatrixAt(c.idx, m);
+      c.inst.instanceMatrix.needsUpdate = true;
+      return;
+    }
+    // дерево: помечаем и пересобираем чанк
+    c.inst.broken = true;
+    if (c.chunk) c.chunk.state = null;
+    this._forceLod = true;
   }
 }

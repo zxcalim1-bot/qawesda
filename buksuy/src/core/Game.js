@@ -36,11 +36,16 @@ import { MapPanel } from '../ui/MapPanel.js';
 import { JournalPanel } from '../ui/JournalPanel.js';
 import { TrunkPanel } from '../ui/TrunkPanel.js';
 import { setupGameEvents } from './gameEvents.js';
+import { installFog } from '../render/atmosphere.js';
+import { loadAssets } from '../render/assets.js';
+import { PostFX } from '../render/PostFX.js';
+import { EnvironmentProbe } from '../render/Environment.js';
 
 const STEP = 1 / 120;
 
 export class Game {
   constructor() {
+    installFog();
     this.events = new EventBus();
     this.settings = new Settings();
     this.canvas = document.getElementById('view');
@@ -49,8 +54,8 @@ export class Game {
       antialias: this.settings.get('quality') !== 'low',
       powerPreference: 'high-performance',
     });
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.toneMapping = THREE.AgXToneMapping;
+    this.renderer.toneMappingExposure = 1;
     this.renderer.shadowMap.enabled = this.settings.get('shadows');
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.scene = new THREE.Scene();
@@ -72,24 +77,20 @@ export class Game {
   _resize() {
     const w = window.innerWidth, h = window.innerHeight;
     const q = this.settings.get('quality');
-    const pr = q === 'high' ? Math.min(window.devicePixelRatio, 2) : q === 'low' ? Math.min(window.devicePixelRatio, 0.85) : Math.min(window.devicePixelRatio, 1.25);
+    const dpr = window.devicePixelRatio || 1;
+    const pr = q === 'ultra' ? Math.min(dpr, 2) : q === 'high' ? Math.min(dpr, 1.5) : q === 'low' ? Math.min(dpr, 0.85) : Math.min(dpr, 1.1);
     this.renderer.setPixelRatio(pr);
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    this.post?.setSize();
   }
 
   _applySetting(k) {
     if (k === 'quality') {
       this._resize();
       this.world.applyQuality();
-      const ms = this.settings.get('quality') === 'high' ? 4096 : this.settings.get('quality') === 'low' ? 1024 : 2048;
-      const sun = this.world.dayNight.sun;
-      if (sun.shadow.mapSize.x !== ms) {
-        sun.shadow.mapSize.set(ms, ms);
-        sun.shadow.map?.dispose();
-        sun.shadow.map = null;
-      }
+      this._applyGraphics();
     }
     if (k === 'viewDistance') this.world.applyQuality();
     if (k === 'shadows') {
@@ -99,11 +100,23 @@ export class Game {
     if (k === 'volume' || k === 'musicVolume') this.audio.applyVolume();
   }
 
+  // всё, что зависит от качества графики и не живёт в мире
+  _applyGraphics() {
+    const q = this.settings.get('quality');
+    const shadow = { low: [55, 1024], medium: [75, 2048], high: [95, 3072], ultra: [120, 4096] }[q] || [75, 2048];
+    this.world.dayNight.setShadowRange(shadow[0], shadow[1]);
+    this.post.configure(q);
+  }
+
   async init() {
     this.ui.showLoading();
     const progress = (p, t) => this.ui.loading(p, t);
+    await loadAssets(this.renderer, (p) => progress(p * 0.05, 'Грузим текстуры'));
     this.world = new WorldManager(this);
     await this.world.generate(progress);
+    this.post = new PostFX(this.renderer, this.scene, this.camera);
+    this.envProbe = new EnvironmentProbe(this.renderer, this.scene, this.world.sky);
+    this._applyGraphics();
 
     const env = { gripMul: (k) => this.world.gripMul(k), ambient: () => this.world.ambient() };
     this.vehicle = new VehicleController(this.events, this.world.ground, this.world.colliders, env);
@@ -249,11 +262,22 @@ export class Game {
     dt = Math.min(dt, 0.1);
     try {
       this.update(dt);
+      this._prepareFrame(dt);
     } catch (err) {
       console.error(err);
     }
-    this.renderer.render(this.scene, this.camera);
+    this.post.render();
     this.input.endFrame();
+  }
+
+  // экспозиция и отражения неба — перед каждой отрисовкой
+  _prepareFrame(dt) {
+    const dn = this.world.dayNight;
+    const r = this.renderer;
+    r.toneMappingExposure += (dn.exposure - r.toneMappingExposure) * Math.min(1, dt * 1.5);
+    this.scene.environmentIntensity = dn.envIntensity;
+    this.envProbe.update(dt, dn, this.world.weather);
+    this.world.grass.update(this.camera.position, this.vehicle.pos, this.player.pos, !this.player.inCar);
   }
 
   update(dt) {

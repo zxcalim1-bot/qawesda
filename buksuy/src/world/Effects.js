@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { FOG_GLSL, fogUniforms } from '../render/atmosphere.js';
 
 // Частицы (пыль, грязь, брызги, дым) и следы шин.
 
@@ -36,32 +37,69 @@ export class Effects {
     this.posAttr = new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage);
     this.colAttr = new THREE.BufferAttribute(this.col, 4).setUsage(THREE.DynamicDrawUsage);
     this.sizeAttr = new THREE.BufferAttribute(this.size, 1).setUsage(THREE.DynamicDrawUsage);
+    const seed = new Float32Array(MAX);
+    for (let i = 0; i < MAX; i++) seed[i] = Math.random();
     g.setAttribute('position', this.posAttr);
     g.setAttribute('aColor', this.colAttr);
     g.setAttribute('aSize', this.sizeAttr);
-    this.uniforms = { uLight: { value: 1 }, uScale: { value: 600 } };
+    g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+    this.uniforms = {
+      uLight: { value: new THREE.Color(1, 1, 1) },
+      uScale: { value: 600 },
+      ...fogUniforms(scene),
+    };
+    // клубы пыли и дыма: шум внутри точки, мягкий край; мелкие брызги — просто капли
     this.points = new THREE.Points(g, new THREE.ShaderMaterial({
       uniforms: this.uniforms,
       transparent: true,
       depthWrite: false,
       vertexShader: `
-        attribute vec4 aColor; attribute float aSize;
+        attribute vec4 aColor; attribute float aSize; attribute float aSeed;
         uniform float uScale;
         varying vec4 vC;
+        varying float vSeed;
+        varying float vPx;
+        varying vec3 vW;
         void main() {
           vC = aColor;
+          vSeed = aSeed;
+          vW = position;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           gl_PointSize = aSize * uScale / max(0.5, -mv.z);
+          vPx = gl_PointSize;
           gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
-        uniform float uLight;
+        uniform vec3 uLight;
         varying vec4 vC;
+        varying float vSeed;
+        varying float vPx;
+        varying vec3 vW;
+        ${FOG_GLSL}
+        float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float vn(vec2 p) {
+          vec2 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y);
+        }
         void main() {
-          float d = length(gl_PointCoord - 0.5);
+          vec2 q = gl_PointCoord - 0.5;
+          float d = length(q);
           if (d > 0.5 || vC.a < 0.003) discard;
-          float a = vC.a * smoothstep(0.5, 0.15, d);
-          gl_FragColor = vec4(vC.rgb * uLight, a);
+          float a = vC.a;
+          vec3 col = vC.rgb;
+          if (vPx > 6.0) {
+            // поворачиваем шум для каждой частицы
+            float ang = vSeed * 6.28;
+            vec2 r = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)) * q;
+            float n = vn(r * 5.0 + vSeed * 17.0) * 0.6 + vn(r * 11.0 + vSeed * 5.0) * 0.4;
+            a *= smoothstep(0.5, 0.05, d) * smoothstep(0.25, 0.75, n + 0.35 - d);
+            col *= 0.8 + n * 0.35 - q.y * 0.3;
+          } else {
+            a *= smoothstep(0.5, 0.2, d);
+          }
+          col *= uLight;
+          gl_FragColor = vec4(applyFog(col, vW), a);
         }`,
     }));
     this.points.frustumCulled = false;
@@ -93,8 +131,10 @@ export class Effects {
     this.size[i] = p.size[0];
   }
 
+  // light — цвет освещения (солнце + небо)
   update(dt, light, ground) {
-    this.uniforms.uLight.value = light;
+    if (typeof light === 'number') this.uniforms.uLight.value.setScalar(light);
+    else this.uniforms.uLight.value.copy(light);
     this.uniforms.uScale.value = (window.innerHeight || 700) * 0.9;
     for (let i = 0; i < MAX; i++) {
       if (this.life[i] <= 0) continue;

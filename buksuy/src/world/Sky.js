@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ATMO_GLSL } from '../render/atmosphere.js';
 
 const vert = /* glsl */ `
 varying vec3 vDir;
@@ -10,20 +11,25 @@ void main() {
 
 const frag = /* glsl */ `
 uniform vec3 uSunDir;
-uniform vec3 uZenith;
-uniform vec3 uHorizon;
-uniform vec3 uGround;
-uniform vec3 uSunColor;
+uniform vec3 uMoonDir;
+uniform vec3 uSunLight;
+uniform vec3 uAmbient;
+uniform vec3 uNight;
 uniform vec3 uFog;
 uniform float uFogMix;
+uniform float uHaze;
+uniform float uOvercast;
 uniform float uStars;
 uniform float uCloud;
 uniform float uCloudDark;
 uniform float uTime;
 uniform float uAurora;
 uniform float uMoon;
-uniform vec3 uMoonDir;
+uniform float uEnv;
+uniform vec2 uWind;
 varying vec3 vDir;
+
+${ATMO_GLSL}
 
 float hash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -34,32 +40,46 @@ float vnoise(vec2 p) {
 }
 float fbm(vec2 p) {
   float s = 0.0, a = 0.5;
-  for (int i = 0; i < 5; i++) { s += vnoise(p) * a; p *= 2.03; a *= 0.5; }
+  mat2 r = mat2(0.8, -0.6, 0.6, 0.8);
+  for (int i = 0; i < 6; i++) { s += vnoise(p) * a; p = r * p * 2.03; a *= 0.5; }
   return s;
+}
+
+// плотность облачного слоя в точке (координаты слоя в км)
+float cloudDensity(vec2 p) {
+  vec2 q = vec2(fbm(p * 0.6 + uWind * 0.3), fbm(p * 0.6 + vec2(5.2, 1.3)));
+  float n = fbm(p + q * 1.4 + uWind);
+  float cov = uCloud;
+  return smoothstep(1.0 - cov * 0.92 - 0.12, 1.0 - cov * 0.92 + 0.28, n);
 }
 
 void main() {
   vec3 d = normalize(vDir);
   float h = d.y;
-  vec3 col = mix(uHorizon, uZenith, pow(clamp(h, 0.0, 1.0), 0.5));
-  if (h < 0.0) col = mix(uHorizon, uGround, clamp(-h * 5.0, 0.0, 1.0));
+  vec3 dd = normalize(vec3(d.x, max(h, 0.0) + 0.002, d.z));
+  vec3 col = atmosphere(dd, uSunDir, uHaze);
 
-  float sd = max(dot(d, uSunDir), 0.0);
-  float sunVis = smoothstep(-0.08, 0.02, uSunDir.y);
-  col += uSunColor * (pow(sd, 6.0) * 0.25 + pow(sd, 40.0) * 0.4) * sunVis * (1.0 - uCloud * 0.6);
-  col += uSunColor * smoothstep(0.9993, 0.99965, sd) * 14.0 * sunVis * (1.0 - uCloud * 0.85);
+  // ночное небо и рассеянный лунный свет
+  col += uNight * (0.55 + 0.45 * (1.0 - clamp(h, 0.0, 1.0)));
+  // пасмурно — небо уходит в серое
+  float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  col = mix(col, vec3(lum) * vec3(0.92, 0.95, 1.0) * (1.0 - uCloudDark * 0.6), uOvercast);
 
-  // луна
-  float md = max(dot(d, uMoonDir), 0.0);
-  col += vec3(0.75, 0.8, 0.9) * smoothstep(0.99955, 0.9998, md) * uMoon * (1.0 - uCloud * 0.8);
-  col += vec3(0.08, 0.1, 0.14) * pow(md, 30.0) * uMoon;
+  // диск солнца
+  float sd = dot(d, uSunDir);
+  float disc = smoothstep(0.99985, 0.99993, sd);
+  float sunVis = (1.0 - uOvercast * 0.9) * (1.0 - uEnv * 0.7);
+  col += uSunLight * disc * 40.0 * sunVis;
 
-  // звёзды
+  // луна и звёзды
+  float md = dot(d, uMoonDir);
+  col += vec3(0.75, 0.8, 0.9) * smoothstep(0.99955, 0.9998, md) * uMoon * 2.0 * (1.0 - uCloud * 0.8);
+  col += vec3(0.02, 0.025, 0.04) * pow(max(md, 0.0), 30.0) * uMoon;
   if (uStars > 0.01 && h > 0.0) {
-    vec3 p = floor(d * 260.0);
+    vec3 p = floor(d * 300.0);
     float r = hash(p);
     float tw = 0.6 + 0.4 * sin(uTime * 2.0 + r * 80.0);
-    col += vec3(step(0.9975, r) * uStars * tw * smoothstep(0.0, 0.2, h) * (1.0 - uCloud));
+    col += vec3(step(0.9978, r) * uStars * tw * smoothstep(0.0, 0.2, h) * (1.0 - uCloud) * 0.25) * (1.0 - uEnv);
   }
 
   // северное сияние — на севере (это -Z)
@@ -74,21 +94,29 @@ void main() {
       band += smoothstep(0.12, 0.0, abs(h - y)) * (0.6 + 0.4 * fbm(vec2(ap.x * 2.0, uTime * 0.2 + fi)));
     }
     vec3 ac = mix(vec3(0.1, 0.9, 0.5), vec3(0.4, 0.2, 0.9), smoothstep(0.25, 0.55, h));
-    col += ac * band * north * uAurora * 0.55 * (1.0 - uCloud * 0.9);
+    col += ac * band * north * uAurora * 0.18 * (1.0 - uCloud * 0.9);
   }
 
-  // облака
-  if (h > -0.02) {
-    vec2 uv = d.xz / (h + 0.15) * 1.4 + vec2(uTime * 0.006, uTime * 0.002);
-    float n = fbm(uv);
-    float cov = smoothstep(1.0 - uCloud, 1.0 - uCloud + 0.35, n);
-    float lit = clamp(fbm(uv + uSunDir.xz * 0.15) - n + 0.6, 0.0, 1.0);
-    vec3 cc = mix(uHorizon * 0.55, mix(uSunColor, vec3(1.0), 0.5) * 0.9, lit) * (1.0 - uCloudDark);
-    col = mix(col, cc, cov * smoothstep(-0.02, 0.15, h) * 0.95);
+  // облака: слой на высоте ~1.8 км
+  if (h > 0.0 && uCloud > 0.02) {
+    float t = 1.8 / (h + 0.04);
+    vec2 cp = d.xz * t * 0.55;
+    float dens = cloudDensity(cp);
+    if (dens > 0.001) {
+      vec2 toSun = normalize(uSunDir.xz + vec2(1e-4)) * 0.18;
+      float dl = cloudDensity(cp + toSun);
+      float light = exp(-dl * 2.2) * (1.0 - uCloudDark * 0.8);
+      float fwd = pow(max(sd, 0.0), 6.0);
+      vec3 lit = uSunLight * light * (0.55 + 1.6 * fwd) + uAmbient * (1.15 - dens * 0.45);
+      lit *= 1.0 - uCloudDark * 0.55;
+      float fade = exp(-t * 0.035);
+      col = mix(col, lit, dens * smoothstep(0.0, 0.06, h) * mix(0.35, 1.0, fade));
+    }
   }
 
-  col = mix(col, uFog, uFogMix * (1.0 - smoothstep(0.0, 0.3, max(h, 0.0))));
-  if (h < 0.0) col = mix(col, uFog, 0.8);
+  // дымка у горизонта и «земля» под горизонтом
+  col = mix(col, uFog, uFogMix * (1.0 - smoothstep(0.0, 0.25, max(h, 0.0))));
+  if (h < 0.0) col = mix(col, uFog, smoothstep(0.0, -0.08, h));
 
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
@@ -100,20 +128,23 @@ export class Sky {
     this.uniforms = {
       uSunDir: { value: new THREE.Vector3(0, 1, 0) },
       uMoonDir: { value: new THREE.Vector3(0, -1, 0) },
-      uZenith: { value: new THREE.Color(0x2a5ea8) },
-      uHorizon: { value: new THREE.Color(0xa8c4e0) },
-      uGround: { value: new THREE.Color(0x3a4030) },
-      uSunColor: { value: new THREE.Color(1, 0.95, 0.85) },
+      uSunLight: { value: new THREE.Color(1, 1, 1) },
+      uAmbient: { value: new THREE.Color(0.3, 0.4, 0.5) },
+      uNight: { value: new THREE.Color(0, 0, 0) },
       uFog: { value: new THREE.Color(0xa8c4e0) },
       uFogMix: { value: 0 },
+      uHaze: { value: 0 },
+      uOvercast: { value: 0 },
       uStars: { value: 0 },
       uCloud: { value: 0.3 },
       uCloudDark: { value: 0 },
       uTime: { value: 0 },
       uAurora: { value: 0 },
       uMoon: { value: 0 },
+      uEnv: { value: 0 },
+      uWind: { value: new THREE.Vector2() },
     };
-    const mat = new THREE.ShaderMaterial({
+    this.material = new THREE.ShaderMaterial({
       vertexShader: vert,
       fragmentShader: frag,
       uniforms: this.uniforms,
@@ -121,14 +152,43 @@ export class Sky {
       depthWrite: false,
       fog: false,
     });
-    this.mesh = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), mat);
+    this.mesh = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), this.material);
     this.mesh.renderOrder = -10;
     this.mesh.frustumCulled = false;
     scene.add(this.mesh);
+
+    // копия неба для карты окружения (отражения и рассеянный свет)
+    this.envScene = new THREE.Scene();
+    this.envUniforms = THREE.UniformsUtils.clone(this.uniforms);
+    this.envMesh = new THREE.Mesh(this.mesh.geometry, new THREE.ShaderMaterial({
+      vertexShader: vert, fragmentShader: frag, uniforms: this.envUniforms, side: THREE.BackSide, depthWrite: false, fog: false,
+    }));
+    this.envMesh.frustumCulled = false;
+    this.envScene.add(this.envMesh);
+    // земля снизу, чтобы отражения не были чёрными
+    this.groundColor = new THREE.Color(0.1, 0.1, 0.08);
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(150, 16), new THREE.MeshBasicMaterial({ color: this.groundColor, side: THREE.DoubleSide }));
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -4;
+    this.envGround = ground;
+    this.envScene.add(ground);
   }
 
-  update(camera, dt) {
+  update(camera, dt, windX = 0, windZ = 0) {
     this.mesh.position.copy(camera.position);
     this.uniforms.uTime.value += dt;
+    this.uniforms.uWind.value.x += dt * (0.004 + windX * 0.01);
+    this.uniforms.uWind.value.y += dt * (0.002 + windZ * 0.01);
+  }
+
+  // переносим текущие значения в копию для карты окружения
+  syncEnv() {
+    for (const k of Object.keys(this.uniforms)) {
+      const v = this.uniforms[k].value;
+      const dst = this.envUniforms[k];
+      if (v && v.copy) dst.value.copy(v);
+      else dst.value = v;
+    }
+    this.envUniforms.uEnv.value = 1;
   }
 }

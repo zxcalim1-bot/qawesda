@@ -33,15 +33,15 @@ const REACT = {
 
 function cowMesh() {
   const parts = [
-    paint(box(0.9, 0.9, 1.9, 0, 1.1, 0), '#e8e2d8'),
-    paint(box(0.5, 0.5, 0.6, 0, 1.4, 1.15), '#e8e2d8'),
-    paint(box(0.4, 0.25, 0.2, 0, 1.25, 1.5), '#d8a0a0'),
-    paint(box(0.4, 0.3, 0.5, 0.25, 1.3, -0.3), '#2a2a2a'),
-    paint(box(0.35, 0.3, 0.4, -0.3, 1.1, 0.4), '#2a2a2a'),
-    paint(box(0.08, 0.2, 0.08, 0.2, 1.75, 1.15), '#d8d0b0'),
-    paint(box(0.08, 0.2, 0.08, -0.2, 1.75, 1.15), '#d8d0b0'),
+    paint(new THREE.CapsuleGeometry(0.46, 1.1, 4, 10).rotateX(Math.PI / 2).translate(0, 1.1, 0), 'fabric:#e8e2d8'),
+    paint(box(0.42, 0.48, 0.6, 0, 1.4, 1.15), 'fabric:#e8e2d8'),
+    paint(box(0.36, 0.25, 0.2, 0, 1.25, 1.5), 'fabric:#d8a0a0'),
+    paint(box(0.4, 0.3, 0.5, 0.42, 1.25, -0.3), 'fabric:#2a2a2a'),
+    paint(box(0.35, 0.3, 0.4, -0.44, 1.1, 0.4), 'fabric:#2a2a2a'),
+    paint(box(0.06, 0.18, 0.06, 0.2, 1.75, 1.15), 'paint:#d8d0b0'),
+    paint(box(0.06, 0.18, 0.06, -0.2, 1.75, 1.15), 'paint:#d8d0b0'),
   ];
-  for (const [x, z] of [[0.3, 0.7], [-0.3, 0.7], [0.3, -0.7], [-0.3, -0.7]]) parts.push(paint(box(0.18, 0.7, 0.18, x, 0.35, z), '#e8e2d8'));
+  for (const [x, z] of [[0.28, 0.7], [-0.28, 0.7], [0.28, -0.7], [-0.28, -0.7]]) parts.push(paint(new THREE.CylinderGeometry(0.07, 0.09, 0.75, 8).translate(x, 0.37, z), 'fabric:#e8e2d8'));
   const m = new THREE.Mesh(merge(parts), propMaterial);
   m.castShadow = true;
   return m;
@@ -49,11 +49,11 @@ function cowMesh() {
 
 function mooseMesh() {
   const parts = [
-    paint(box(0.9, 1.1, 2.2, 0, 1.6, 0), '#4a3424'),
-    paint(box(0.45, 0.5, 0.8, 0, 2.0, 1.4), '#4a3424'),
-    paint(box(1.6, 0.08, 0.5, 0, 2.45, 1.3), '#c8b090'),
+    paint(new THREE.CapsuleGeometry(0.5, 1.2, 4, 10).rotateX(Math.PI / 2).translate(0, 1.65, 0), 'fabric:#4a3424'),
+    paint(box(0.4, 0.5, 0.8, 0, 2.0, 1.4), 'fabric:#4a3424'),
+    paint(box(1.6, 0.06, 0.5, 0, 2.45, 1.3), 'wood:#c8b090'),
   ];
-  for (const [x, z] of [[0.3, 0.8], [-0.3, 0.8], [0.3, -0.8], [-0.3, -0.8]]) parts.push(paint(box(0.16, 1.1, 0.16, x, 0.55, z), '#3a2a1a'));
+  for (const [x, z] of [[0.3, 0.8], [-0.3, 0.8], [0.3, -0.8], [-0.3, -0.8]]) parts.push(paint(new THREE.CylinderGeometry(0.06, 0.08, 1.15, 8).translate(x, 0.57, z), 'fabric:#3a2a1a'));
   const m = new THREE.Mesh(merge(parts), propMaterial);
   m.castShadow = true;
   return m;
@@ -63,11 +63,11 @@ function logMesh(len) {
   const g = new THREE.CylinderGeometry(0.35, 0.45, len, 8);
   g.rotateZ(Math.PI / 2);
   g.translate(0, 0.4, 0);
-  const parts = [paint(g, '#5a4430', 0.1)];
+  const parts = [paint(g, 'wood:#5a4430', 0.1)];
   for (let i = 0; i < 5; i++) {
     const b = new THREE.IcosahedronGeometry(1.0, 0);
     b.translate(len / 2 - 0.5 + Math.random(), 0.9, (Math.random() - 0.5) * 2);
-    parts.push(paint(b, '#36502a', 0.2));
+    parts.push(paint(b, 'fabric:#36502a', 0.2));
   }
   const m = new THREE.Mesh(merge(parts), propMaterial);
   m.castShadow = true;
@@ -286,7 +286,7 @@ export class RandomEvents {
           const k = makeGarage({ w: 3, d: 3, h: 2.4, wall: '#8a7a6a', gate: '#3a3a3a' });
           const face = Math.atan2(p.cx - p.x, p.cz - p.z);
           R._add(k.group, p.x, p.z, face);
-          const pump = new THREE.Mesh(merge([paint(box(0.6, 1.5, 0.5, 0, 0.75, 0), '#6a5a4a'), paint(box(0.62, 0.35, 0.52, 0, 1.3, 0), '#7a3a2a')]), propMaterial);
+          const pump = new THREE.Mesh(merge([paint(box(0.6, 1.5, 0.5, 0, 0.75, 0), 'rusty:#6a5a4a'), paint(box(0.62, 0.35, 0.52, 0, 1.3, 0), 'rusty:#7a3a2a')]), propMaterial);
           const px = p.x + p.dx * 4, pz = p.z + p.dz * 4;
           R._add(pump, px, pz, p.yaw);
           const col = g.world.colliders.add({ type: 'box', x: p.x, z: p.z, hx: 1.5, hz: 1.5, rot: face });
@@ -318,7 +318,7 @@ export class RandomEvents {
           if (!p) return false;
           const car = makeWreck(777, '#8a2a20');
           R._add(car, p.x, p.z, p.yaw);
-          const trailer = new THREE.Mesh(merge([paint(box(1.5, 0.7, 2, 0, 0.75, 0), '#5a5a5a'), paint(box(1.5, 0.8, 0.05, 0, 1.4, 0.98), '#3a5a8a')]), propMaterial);
+          const trailer = new THREE.Mesh(merge([paint(box(1.5, 0.7, 2, 0, 0.75, 0), 'metal:#5a5a5a'), paint(box(1.5, 0.8, 0.05, 0, 1.4, 0.98), 'metal:#3a5a8a')]), propMaterial);
           const tx = p.x - p.dx * 4, tz = p.z - p.dz * 4;
           R._add(trailer, tx, tz, p.yaw);
           const cols = [
@@ -593,7 +593,7 @@ export class RandomEvents {
     const g = this.game;
     const it = ITEMS[id];
     const s = 0.25 + Math.min(it.size, 4) * 0.12;
-    const mesh = new THREE.Mesh(paint(box(s * 1.4, s * 0.7, s, 0, 0, 0), it.carPart ? '#3f8f8c' : '#8a6a4a'), propMaterial);
+    const mesh = new THREE.Mesh(paint(box(s * 1.4, s * 0.7, s, 0, 0, 0), it.carPart ? 'metal:#3f8f8c' : 'wood:#8a6a4a'), propMaterial);
     mesh.castShadow = true;
     mesh.position.set(x, g.world.ground.height(x, z) + 2, z);
     const d = g.debris.spawn(mesh, { vel: new THREE.Vector3(0, 0, 0), radius: s * 0.35, itemId: id, name: it.name });

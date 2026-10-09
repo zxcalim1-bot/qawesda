@@ -6,17 +6,17 @@ import { damp } from '../core/util.js';
 function wheels(parts, list, r, w) {
   for (const [x, z] of list) {
     const g = new THREE.CylinderGeometry(r, r, w, 12).rotateZ(Math.PI / 2).translate(x, r, z);
-    parts.push(paint(g, '#161616'));
+    parts.push(paint(g, 'rubber:#161616'));
   }
 }
 
 const MODELS = {
   kamaz: () => {
     const p = [];
-    p.push(paint(box(2.4, 2.3, 2.2, 0, 1.9, 3.6), '#c8702a'));
-    p.push(paint(box(2.5, 2.6, 6.5, 0, 2.3, -1.2), '#3a5a3a'));
-    p.push(paint(box(2.2, 0.4, 9.5, 0, 0.75, 0.6), '#2a2a2a'));
-    p.push(paint(box(2.0, 0.6, 0.2, 0, 1.0, 4.75), '#8a8a8a'));
+    p.push(paint(box(2.4, 2.3, 2.2, 0, 1.9, 3.6), 'metal:#c8702a'));
+    p.push(paint(box(2.5, 2.6, 6.5, 0, 2.3, -1.2), 'metal:#3a5a3a'));
+    p.push(paint(box(2.2, 0.4, 9.5, 0, 0.75, 0.6), 'rusty:#2a2a2a'));
+    p.push(paint(box(2.0, 0.6, 0.2, 0, 1.0, 4.75), 'metal:#8a8a8a'));
     wheels(p, [[-1.05, 3.4], [1.05, 3.4], [-1.05, -1.8], [1.05, -1.8], [-1.05, -3.2], [1.05, -3.2]], 0.52, 0.4);
     const g = new THREE.Group();
     const m = new THREE.Mesh(merge(p), propMaterial);
@@ -26,9 +26,9 @@ const MODELS = {
   },
   paz: () => {
     const p = [];
-    p.push(paint(box(2.3, 2.2, 7.2, 0, 1.6, 0), '#e8c040'));
-    p.push(paint(box(2.32, 0.3, 7.22, 0, 0.75, 0), '#c83020'));
-    p.push(paint(box(2.0, 0.5, 0.1, 0, 1.0, 3.62), '#d8d8d0'));
+    p.push(paint(box(2.3, 2.2, 7.2, 0, 1.6, 0), 'metal:#e8c040'));
+    p.push(paint(box(2.32, 0.3, 7.22, 0, 0.75, 0), 'metal:#c83020'));
+    p.push(paint(box(2.0, 0.5, 0.1, 0, 1.0, 3.62), 'metal:#d8d8d0'));
     wheels(p, [[-1.0, 2.4], [1.0, 2.4], [-1.0, -2.4], [1.0, -2.4]], 0.45, 0.35);
     const g = new THREE.Group();
     const m = new THREE.Mesh(merge(p), propMaterial);
@@ -40,9 +40,9 @@ const MODELS = {
   },
   niva: () => {
     const p = [];
-    p.push(paint(box(1.68, 0.75, 3.7, 0, 0.85, 0), '#e8e6dc'));
-    p.push(paint(box(1.6, 0.6, 2.0, 0, 1.5, -0.35), '#e8e6dc'));
-    p.push(paint(box(1.3, 0.12, 1.4, 0, 1.86, -0.4), '#3a3a3a'));
+    p.push(paint(box(1.68, 0.75, 3.7, 0, 0.85, 0), 'metal:#e8e6dc'));
+    p.push(paint(box(1.6, 0.6, 2.0, 0, 1.5, -0.35), 'metal:#e8e6dc'));
+    p.push(paint(box(1.3, 0.12, 1.4, 0, 1.86, -0.4), 'metal:#3a3a3a'));
     wheels(p, [[-0.75, 1.25], [0.75, 1.25], [-0.75, -1.2], [0.75, -1.2]], 0.36, 0.25);
     const g = new THREE.Group();
     const m = new THREE.Mesh(merge(p), propMaterial);

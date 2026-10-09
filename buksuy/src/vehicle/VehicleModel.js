@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { makeCanvas } from '../world/materials.js';
+import { tex, hasImage } from '../render/assets.js';
 import { clamp, damp } from '../core/util.js';
 import { BASE } from './VehicleConfig.js';
 
@@ -10,40 +11,111 @@ const WHEEL_POS = {
   wheelFL: [0.69, 1.24], wheelFR: [-0.69, 1.24], wheelRL: [0.69, -1.2], wheelRR: [-0.69, -1.2],
 };
 
-function bodyTexture(color) {
-  const S = 256;
+// Краска кузова: выгоревший верх, ржавые пятна из фото-текстуры ржавчины, царапины.
+// Карта нормалей — бугристая там, где ржавчина.
+function bodyTextures(color) {
+  const S = 512;
   const c = makeCanvas(S, S);
   const ctx = c.getContext('2d');
+  const n = makeCanvas(S, S);
+  const nctx = n.getContext('2d');
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, S, S);
-  // выгоревшая краска
-  for (let i = 0; i < 400; i++) {
-    ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.06})`;
-    ctx.fillRect(Math.random() * S, Math.random() * S, 4 + Math.random() * 20, 2 + Math.random() * 10);
-  }
-  // ржавчина
-  for (let i = 0; i < 14; i++) {
-    const x = Math.random() * S, y = Math.random() * S, r = 3 + Math.random() * 12;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, 'rgba(110,50,20,0.9)');
-    g.addColorStop(0.6, 'rgba(140,70,30,0.6)');
-    g.addColorStop(1, 'rgba(140,70,30,0)');
-    ctx.fillStyle = g;
+  nctx.fillStyle = 'rgb(128,128,255)';
+  nctx.fillRect(0, 0, S, S);
+  // неровная выгоревшая краска
+  for (let i = 0; i < 900; i++) {
+    ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.035})`;
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.ellipse(Math.random() * S, Math.random() * S, 4 + Math.random() * 30, 2 + Math.random() * 14, Math.random() * 3, 0, Math.PI * 2);
     ctx.fill();
   }
-  // царапины
-  ctx.strokeStyle = 'rgba(200,200,200,0.35)';
-  for (let i = 0; i < 12; i++) {
+  const rust = hasImage('rust_c') ? tex('rust_c').image : null;
+  const rustN = hasImage('rust_n') ? tex('rust_n').image : null;
+  const mask = makeCanvas(S, S);
+  const mctx = mask.getContext('2d');
+  for (let i = 0; i < 26; i++) {
+    const x = Math.random() * S, y = Math.random() * S, r = 4 + Math.random() * (i < 6 ? 34 : 14);
+    const g = mctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, 'rgba(0,0,0,1)');
+    g.addColorStop(0.55, 'rgba(0,0,0,0.85)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    mctx.fillStyle = g;
+    mctx.beginPath();
+    // рваный край
+    for (let a = 0; a <= 12; a++) {
+      const ang = (a / 12) * Math.PI * 2;
+      const rr = r * (0.6 + Math.random() * 0.5);
+      mctx[a ? 'lineTo' : 'moveTo'](x + Math.cos(ang) * rr, y + Math.sin(ang) * rr);
+    }
+    mctx.fill();
+  }
+  const stamp = (target, img) => {
+    const tmp = makeCanvas(S, S);
+    const t = tmp.getContext('2d');
+    if (img) t.drawImage(img, 0, 0, S, S);
+    else { t.fillStyle = '#7a3a1a'; t.fillRect(0, 0, S, S); }
+    t.globalCompositeOperation = 'destination-in';
+    t.drawImage(mask, 0, 0);
+    target.drawImage(tmp, 0, 0);
+  };
+  stamp(ctx, rust);
+  stamp(nctx, rustN);
+  // царапины до металла
+  ctx.strokeStyle = 'rgba(210,210,205,0.35)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 30; i++) {
     ctx.beginPath();
     const x = Math.random() * S, y = Math.random() * S;
     ctx.moveTo(x, y);
-    ctx.lineTo(x + (Math.random() - 0.5) * 60, y + (Math.random() - 0.5) * 8);
+    ctx.lineTo(x + (Math.random() - 0.5) * 90, y + (Math.random() - 0.5) * 10);
     ctx.stroke();
   }
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  const tn = new THREE.CanvasTexture(n);
+  tn.colorSpace = THREE.NoColorSpace;
+  // маска ржавчины — для шероховатости (ржавчина матовая, краска с остатками лака)
+  const rough = makeCanvas(S, S);
+  const rctx = rough.getContext('2d');
+  rctx.fillStyle = 'rgb(0,95,0)';
+  rctx.fillRect(0, 0, S, S);
+  const tmp = makeCanvas(S, S);
+  const tc = tmp.getContext('2d');
+  tc.fillStyle = 'rgb(0,240,0)';
+  tc.fillRect(0, 0, S, S);
+  tc.globalCompositeOperation = 'destination-in';
+  tc.drawImage(mask, 0, 0);
+  rctx.drawImage(tmp, 0, 0);
+  const tr = new THREE.CanvasTexture(rough);
+  tr.colorSpace = THREE.NoColorSpace;
+  return { map: t, normal: tn, rough: tr };
+}
+
+// протектор и боковина шины
+function tireTextures() {
+  const W = 512, H = 64;
+  const c = makeCanvas(W, H);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgb(128,128,255)';
+  ctx.fillRect(0, 0, W, H);
+  // поперечные ламели и продольные канавки — рисуем «склоны» в нормалях
+  for (let x = 0; x < W; x += 16) {
+    ctx.fillStyle = 'rgb(70,128,230)';
+    ctx.fillRect(x, 8, 3, H - 16);
+    ctx.fillStyle = 'rgb(186,128,230)';
+    ctx.fillRect(x + 3, 8, 3, H - 16);
+  }
+  for (const y of [H * 0.33, H * 0.66]) {
+    ctx.fillStyle = 'rgb(128,70,230)';
+    ctx.fillRect(0, y - 3, W, 3);
+    ctx.fillStyle = 'rgb(128,186,230)';
+    ctx.fillRect(0, y, W, 3);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.NoColorSpace;
+  t.wrapS = THREE.RepeatWrapping;
   return t;
 }
 
@@ -130,20 +202,42 @@ export class VehicleModel {
     this.dirtU = { uDirt: { value: 0.15 } };
 
     const color = opts.color ?? '#3f8f8c';
-    this.bodyMat = new THREE.MeshStandardMaterial({ map: bodyTexture(color), roughness: 0.55, metalness: 0.25 });
+    const body = bodyTextures(color);
+    this.bodyMat = new THREE.MeshPhysicalMaterial({
+      map: body.map,
+      normalMap: body.normal,
+      normalScale: new THREE.Vector2(0.8, 0.8),
+      roughnessMap: body.rough,
+      roughness: 1,
+      metalness: 0,
+      clearcoat: 0.45,
+      clearcoatRoughness: 0.35,
+    });
     patchDirt(this.bodyMat, this.dirtU);
-    this.chromeMat = new THREE.MeshStandardMaterial({ color: 0xb8bcc0, roughness: 0.3, metalness: 0.9 });
+    this.chromeMat = new THREE.MeshStandardMaterial({ color: 0xc8ccd0, roughness: 0.18, metalness: 1 });
     patchDirt(this.chromeMat, this.dirtU);
-    this.darkMat = new THREE.MeshStandardMaterial({ color: 0x1b1c1d, roughness: 0.8 });
-    this.glassMat = new THREE.MeshStandardMaterial({ color: 0x24343d, roughness: 0.08, metalness: 0.4, transparent: true, opacity: 0.55 });
+    this.darkMat = new THREE.MeshStandardMaterial({ color: 0x141516, roughness: 0.75 });
+    this.rubberMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.9 });
+    this.glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0x1a262c, roughness: 0.03, metalness: 0, transparent: true, opacity: 0.42, envMapIntensity: 1.8, clearcoat: 1, clearcoatRoughness: 0.02,
+    });
     this.glassCrack1 = new THREE.MeshStandardMaterial({ map: crackedGlassTexture(1), roughness: 0.2, transparent: true, opacity: 0.7 });
     this.glassCrack2 = new THREE.MeshStandardMaterial({ map: crackedGlassTexture(2), roughness: 0.3, transparent: true, opacity: 0.8 });
-    this.tireMat = new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.95 });
-    this.rimMat = new THREE.MeshStandardMaterial({ color: 0xa8acae, roughness: 0.35, metalness: 0.8 });
-    this.headMatL = new THREE.MeshStandardMaterial({ color: 0xdddddd, emissive: 0xfff2d0, emissiveIntensity: 0, roughness: 0.2 });
+    const tread = tireTextures();
+    tread.repeat.set(1, 1);
+    this.tireMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.92, normalMap: tread, normalScale: new THREE.Vector2(1.5, 1.5) });
+    patchDirt(this.tireMat, this.dirtU);
+    this.rimMat = new THREE.MeshStandardMaterial({ color: 0x8a8e90, roughness: 0.35, metalness: 0.85 });
+    patchDirt(this.rimMat, this.dirtU);
+    this.headMatL = new THREE.MeshPhysicalMaterial({ color: 0xdddddd, emissive: 0xfff2d0, emissiveIntensity: 0, roughness: 0.05, metalness: 0.2, clearcoat: 1 });
     this.headMatR = this.headMatL.clone();
-    this.tailMat = new THREE.MeshStandardMaterial({ color: 0x6a0d0d, emissive: 0xff2010, emissiveIntensity: 0.05, roughness: 0.3 });
+    this.tailMat = new THREE.MeshPhysicalMaterial({ color: 0x5a0808, emissive: 0xff2010, emissiveIntensity: 0.05, roughness: 0.1, clearcoat: 1, transparent: true, opacity: 0.92 });
+    this.amberMat = new THREE.MeshPhysicalMaterial({ color: 0x8a5010, emissive: 0xff8a10, emissiveIntensity: 0.02, roughness: 0.1, clearcoat: 1 });
     this.interiorMat = new THREE.MeshStandardMaterial({ color: 0x3a2a22, roughness: 0.9 });
+    if (hasImage('jersey_c')) {
+      const fab = tex('jersey_c');
+      this.interiorMat = new THREE.MeshStandardMaterial({ map: fab, color: 0x7a5a48, roughness: 0.95 });
+    }
 
     this.parts = {}; // id -> Object3D (для отваливания)
     this.dentables = [];
@@ -379,28 +473,118 @@ export class VehicleModel {
     ex.translate(-0.45, -0.38, -2.0);
     this.parts.exhaust = this._mesh(ex, this.chromeMat, R, false);
 
-    // колёса
+    // колёса: шина — тело вращения с профилем, диск со штамповкой, колпак
     this.wheelGroups = {};
+    const R0 = BASE.wheelRadius, rimR = 0.175, halfW = 0.095;
+    const profile = [];
+    for (let i = 0; i <= 12; i++) {
+      const a = (i / 12) * Math.PI;
+      // боковина скруглена, протектор почти плоский
+      const y = -Math.cos(a) * halfW;
+      const r = rimR + (R0 - rimR) * Math.pow(Math.sin(a), 0.35);
+      profile.push(new THREE.Vector2(r, y));
+    }
+    const tireGeo = new THREE.LatheGeometry(profile, 36);
+    tireGeo.rotateZ(Math.PI / 2);
+    const rimProfile = [
+      new THREE.Vector2(0.02, -0.07), new THREE.Vector2(0.08, -0.075), new THREE.Vector2(0.12, -0.06),
+      new THREE.Vector2(0.15, -0.05), new THREE.Vector2(rimR - 0.005, -0.06), new THREE.Vector2(rimR + 0.008, -0.085),
+      new THREE.Vector2(rimR + 0.008, 0.08), new THREE.Vector2(rimR - 0.01, 0.08),
+    ];
+    const rimGeo = new THREE.LatheGeometry(rimProfile, 24);
+    rimGeo.rotateZ(Math.PI / 2);
+    const capGeo = new THREE.SphereGeometry(0.085, 18, 8, 0, Math.PI * 2, 0, Math.PI * 0.35);
+    capGeo.rotateZ(-Math.PI / 2);
+    capGeo.translate(-0.065, 0, 0);
     for (const [id, [x, z]] of Object.entries(WHEEL_POS)) {
       const pivot = new THREE.Group(); // руль
       pivot.position.set(x, -0.37, z);
       const spin = new THREE.Group();
       pivot.add(spin);
-      const tire = new THREE.CylinderGeometry(BASE.wheelRadius, BASE.wheelRadius, 0.19, 18, 1);
-      tire.rotateZ(Math.PI / 2);
-      const t = new THREE.Mesh(tire, this.tireMat);
+      const side = x > 0 ? 1 : -1;
+      const t = new THREE.Mesh(tireGeo, this.tireMat);
       t.castShadow = true;
+      t.receiveShadow = true;
       spin.add(t);
-      const rim = new THREE.CylinderGeometry(0.17, 0.17, 0.2, 10);
-      rim.rotateZ(Math.PI / 2);
-      const r = new THREE.Mesh(rim, this.rimMat);
+      const r = new THREE.Mesh(rimGeo, this.rimMat);
+      r.scale.x = side;
+      r.castShadow = true;
       spin.add(r);
-      // спицы для заметного вращения
-      const bar = this._box(0.205, 0.05, 0.3);
-      spin.add(new THREE.Mesh(bar, this.rimMat));
+      const cap = new THREE.Mesh(capGeo, this.chromeMat);
+      cap.scale.x = side;
+      spin.add(cap);
+      // болты — видно, что колесо крутится
+      for (let k = 0; k < 4; k++) {
+        const a = (k / 4) * Math.PI * 2;
+        const b = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 6).rotateZ(Math.PI / 2), this.chromeMat);
+        b.position.set(side * 0.075, Math.cos(a) * 0.115, Math.sin(a) * 0.115);
+        spin.add(b);
+      }
       R.add(pivot);
       this.wheelGroups[id] = { pivot, spin, tire: t };
       this.parts[id] = pivot;
+    }
+
+    // детали кузова: колёсные арки, хромированные молдинги, щели дверей, решётка, дворники, антенна
+    const arch = new THREE.CylinderGeometry(0.36, 0.36, 0.02, 20, 1, false, 0, Math.PI);
+    arch.rotateZ(Math.PI / 2);
+    for (const [x, z] of Object.values(WHEEL_POS)) {
+      const m = new THREE.Mesh(arch, this.darkMat);
+      m.position.set(x > 0 ? W / 2 + 0.004 : -W / 2 - 0.004, -0.39, z);
+      R.add(m);
+    }
+    for (const side of [-1, 1]) {
+      // молдинг вдоль борта
+      const strip = new THREE.Mesh(this._box(0.012, 0.025, 4.0), this.chromeMat);
+      strip.position.set(side * (W / 2 + 0.006), -0.02, 0);
+      R.add(strip);
+      // водосток над дверями
+      const gutter = new THREE.Mesh(this._box(0.02, 0.02, 1.2), this.chromeMat);
+      gutter.position.set(side * 0.665, 0.79, -0.2);
+      R.add(gutter);
+      // щель между передним крылом и дверью и за дверью
+      for (const z of [0.87, -0.6]) {
+        const seam = new THREE.Mesh(this._box(0.006, 0.6, 0.012), this.darkMat);
+        seam.position.set(side * (W / 2 + 0.003), -0.1, z);
+        R.add(seam);
+      }
+      // брызговик
+      const flap = new THREE.Mesh(this._box(0.02, 0.22, 0.25), this.rubberMat);
+      flap.position.set(side * 0.7, -0.52, -1.52);
+      R.add(flap);
+    }
+    // решётка радиатора: рамка и горизонтальные ламели
+    for (let i = 0; i < 5; i++) {
+      const slat = new THREE.Mesh(this._box(0.78, 0.012, 0.02), this.chromeMat);
+      slat.position.set(0, -0.025 + i * 0.03, 2.025);
+      R.add(slat);
+    }
+    // поворотники
+    for (const x of [0.66, -0.66]) {
+      const g = new THREE.Mesh(this._box(0.12, 0.05, 0.03), this.amberMat);
+      g.position.set(x, -0.08, 2.03);
+      R.add(g);
+    }
+    // дворники
+    for (const x of [0.32, -0.22]) {
+      const wiper = new THREE.Mesh(this._box(0.012, 0.012, 0.45), this.darkMat);
+      wiper.position.set(x, 0.26, 0.92);
+      wiper.rotation.set(-0.4, 0, 1.25);
+      R.add(wiper);
+    }
+    // антенна
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.006, 0.9, 5), this.chromeMat);
+    ant.position.set(0.72, 0.62, 1.0);
+    ant.rotation.x = -0.25;
+    R.add(ant);
+    // уплотнители стёкол
+    for (const [a, b] of [[V[3], V[2]], [V[2], V[6]], [V[6], V[7]], [V[7], V[3]], [V[1], V[0]], [V[0], V[4]], [V[4], V[5]], [V[5], V[1]]]) {
+      const len = a.distanceTo(b);
+      const g = new THREE.CylinderGeometry(0.012, 0.012, len, 5);
+      const m = new THREE.Mesh(g, this.chromeMat);
+      m.position.copy(a).add(b).multiplyScalar(0.5);
+      m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3().subVectors(b, a).normalize());
+      R.add(m);
     }
 
     // улучшения
